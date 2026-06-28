@@ -3,15 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -20,6 +12,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 
 import { createLivestock } from '@/services/livestock';
 import { usePens } from '@/hooks/useLivestock';
+import { PhotoPicker } from '@/components/ui/PhotoPicker';
 
 // ── Constants ──
 
@@ -87,6 +80,7 @@ export default function AddLivestockScreen() {
   const [nationalId, setNationalId] = useState('');
   const [rfidTag, setRfidTag] = useState('');
   const [notes, setNotes] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const onBirthDateChange = useCallback((_: DateTimePickerEvent, selectedDate?: Date) => {
@@ -119,8 +113,8 @@ export default function AddLivestockScreen() {
       queryClient.invalidateQueries({ queryKey: ['livestock'] });
       router.back();
     },
-    onError: () => {
-      setErrors({ submit: 'Gagal menyimpan data. Coba lagi.' });
+    onError: (err: any) => {
+      setErrors({ submit: err?.message || 'Gagal menyimpan data. Coba lagi.' });
     },
   });
 
@@ -145,15 +139,17 @@ export default function AddLivestockScreen() {
       if (purchasePrice) input.purchase_price = parseFloat(purchasePrice);
     }
     if (notes.trim()) input.notes = notes.trim();
+    if (photoUrl) input.photo_url = photoUrl;
 
     mutation.mutate(input);
-  }, [validate, earTag, name, species, breed, sex, birthDate, origin, selectedPenId, nationalId, rfidTag, purchaseDate, purchasePrice, notes, mutation]);
+  }, [validate, earTag, name, species, breed, sex, birthDate, origin, selectedPenId, nationalId, rfidTag, purchaseDate, purchasePrice, notes, photoUrl, mutation]);
 
   const selectedPen = pens.find((p) => p._id === selectedPenId);
   const breeds = BREED_OPTIONS[species] || [];
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Header ── */}
       <View className="flex-row items-center bg-surface px-gutter py-sm shadow-sm">
         <Pressable
@@ -174,10 +170,15 @@ export default function AddLivestockScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-xl">
+          {/* ── Foto Ternak ── */}
+          <View className="items-center">
+            <PhotoPicker value={photoUrl} onChange={setPhotoUrl} />
+          </View>
+
           {/* ── Identitas Ternak ── */}
           <View className="gap-md">
             <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="tag" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="tag" size={20} color="#0F5238" />
               <Text className="font-headline text-headline-sm font-bold uppercase tracking-wider text-primary">Identitas Ternak</Text>
             </View>
 
@@ -235,7 +236,7 @@ export default function AddLivestockScreen() {
           {/* ── Spesies & Ras ── */}
           <View className="gap-md">
             <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="paw" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="paw" size={20} color="#0F5238" />
               <Text className="font-headline text-headline-sm font-bold uppercase tracking-wider text-primary">Spesies & Ras</Text>
             </View>
 
@@ -251,7 +252,7 @@ export default function AddLivestockScreen() {
                       species === s.key ? 'border-primary bg-primary/10' : 'border-outline-variant bg-surface'
                     }`}
                   >
-                    <MaterialCommunityIcons name={s.icon as any} size={20} color={species === s.key ? '#2D6A4F' : '#707973'} />
+                    <MaterialCommunityIcons name={s.icon as any} size={20} color={species === s.key ? '#0F5238' : '#707973'} />
                     <Text className={`text-label-md font-medium ${species === s.key ? 'text-primary' : 'text-on-surface-variant'}`}>{s.label}</Text>
                   </Pressable>
                 ))}
@@ -292,7 +293,7 @@ export default function AddLivestockScreen() {
                       sex === s.key ? 'border-primary bg-primary/10' : 'border-outline-variant bg-surface'
                     }`}
                   >
-                    <MaterialCommunityIcons name={s.icon as any} size={20} color={sex === s.key ? '#2D6A4F' : '#707973'} />
+                    <MaterialCommunityIcons name={s.icon as any} size={20} color={sex === s.key ? '#0F5238' : '#707973'} />
                     <Text className={`text-label-md font-medium ${sex === s.key ? 'text-primary' : 'text-on-surface-variant'}`}>{s.label}</Text>
                   </Pressable>
                 ))}
@@ -304,7 +305,7 @@ export default function AddLivestockScreen() {
           {/* ── Asal & Tanggal ── */}
           <View className="gap-md">
             <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="calendar" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="calendar" size={20} color="#0F5238" />
               <Text className="font-headline text-headline-sm font-bold uppercase tracking-wider text-primary">Asal & Tanggal</Text>
             </View>
 
@@ -378,7 +379,7 @@ export default function AddLivestockScreen() {
           {/* ── Kandang ── */}
           <View className="gap-md">
             <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="home" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="home" size={20} color="#0F5238" />
               <Text className="font-headline text-headline-sm font-bold uppercase tracking-wider text-primary">Kandang</Text>
             </View>
 
@@ -458,6 +459,7 @@ export default function AddLivestockScreen() {
           </Pressable>
         </View>
       </ScrollView>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

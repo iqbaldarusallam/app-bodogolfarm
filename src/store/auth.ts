@@ -2,6 +2,7 @@
 // Auth store — Zustand + SecureStore (tokens) + AsyncStorage (user)
 // ─────────────────────────────────────────────────────────
 
+import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,30 +10,48 @@ import * as SecureStore from 'expo-secure-store';
 
 import type { User } from '@/types/auth';
 
-// ── SecureStore keys for tokens ──
+// ── Token keys ──
 const TOKEN_KEY = 'bodogol_access_token';
 const REFRESH_TOKEN_KEY = 'bodogol_refresh_token';
+
+// ── Platform-safe secure storage ──
+// expo-secure-store hanya tersedia di native (Android/iOS). Di web fallback
+// ke AsyncStorage (localStorage) agar tidak crash saat testing di browser.
+const isWeb = Platform.OS === 'web';
+
+async function secureSet(key: string, value: string): Promise<void> {
+  if (isWeb) return AsyncStorage.setItem(key, value);
+  return SecureStore.setItemAsync(key, value);
+}
+async function secureGet(key: string): Promise<string | null> {
+  if (isWeb) return AsyncStorage.getItem(key);
+  return SecureStore.getItemAsync(key);
+}
+async function secureDelete(key: string): Promise<void> {
+  if (isWeb) return AsyncStorage.removeItem(key);
+  return SecureStore.deleteItemAsync(key);
+}
 
 // ── Token helpers (used before Zustand rehydrates) ──
 export async function loadTokensFromSecureStore(): Promise<{ token: string | null; refreshToken: string | null }> {
   const [token, refreshToken] = await Promise.all([
-    SecureStore.getItemAsync(TOKEN_KEY),
-    SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
+    secureGet(TOKEN_KEY),
+    secureGet(REFRESH_TOKEN_KEY),
   ]);
   return { token, refreshToken };
 }
 
 export async function saveTokensToSecureStore(token: string, refreshToken: string): Promise<void> {
   await Promise.all([
-    SecureStore.setItemAsync(TOKEN_KEY, token),
-    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
+    secureSet(TOKEN_KEY, token),
+    secureSet(REFRESH_TOKEN_KEY, refreshToken),
   ]);
 }
 
 export async function clearTokensFromSecureStore(): Promise<void> {
   await Promise.all([
-    SecureStore.deleteItemAsync(TOKEN_KEY),
-    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+    secureDelete(TOKEN_KEY),
+    secureDelete(REFRESH_TOKEN_KEY),
   ]);
 }
 

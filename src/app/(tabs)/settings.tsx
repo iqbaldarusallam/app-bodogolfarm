@@ -10,6 +10,7 @@ import type { ComponentProps } from 'react';
 import { useRouter } from 'expo-router';
 
 import { useAuthStore } from '@/store/auth';
+import { usePermissions } from '@/lib/permissions';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -81,10 +82,13 @@ export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const router = useRouter();
+  const { canManageMasterData } = usePermissions();
 
   const handleAction = (action: string) => {
     if (action === 'pens') { router.push('/(modals)/manage-pens'); return; }
     if (action === 'feed') { router.push('/(modals)/feed-master'); return; }
+    if (action === 'officers') { router.push('/(modals)/manage-users'); return; }
+    if (action === 'password') { router.push('/(modals)/change-password'); return; }
     if (action === 'about') {
       Alert.alert(
         'Tentang Aplikasi',
@@ -160,17 +164,19 @@ export default function SettingsScreen() {
             ))}
           </Section>
 
-          {/* Management */}
-          <Section title="Manajemen">
-            {MANAGEMENT_ITEMS.map((item) => (
-              <SettingsRow
-                key={item.label}
-                label={item.label}
-                icon={item.icon}
-                onPress={() => handleAction(item.action)}
-              />
-            ))}
-          </Section>
+          {/* Management — hanya senior officer ke atas */}
+          {canManageMasterData && (
+            <Section title="Manajemen">
+              {MANAGEMENT_ITEMS.map((item) => (
+                <SettingsRow
+                  key={item.label}
+                  label={item.label}
+                  icon={item.icon}
+                  onPress={() => handleAction(item.action)}
+                />
+              ))}
+            </Section>
+          )}
 
           {/* Sync Status */}
           <Pressable

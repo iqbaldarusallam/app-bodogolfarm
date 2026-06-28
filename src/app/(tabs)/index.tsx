@@ -233,13 +233,7 @@ export default function DashboardScreen() {
     })) ?? []),
   ];
 
-  const fallbackTimeline = [
-    { title: 'Pemberian pakan selesai', description: 'Kandang K-01 · 12 ekor', time: '08:15', tone: 'active' as const },
-    { title: 'Pemeriksaan kesehatan', description: 'A-014 membutuhkan observasi', time: '09:40', tone: 'sick' as const },
-    { title: 'Sinkronisasi data', description: 'Semua catatan berhasil tersimpan', time: '10:05', tone: 'muted' as const },
-  ];
-
-  const displayTimeline = timelineItems.length ? timelineItems : fallbackTimeline;
+  const displayTimeline = timelineItems;
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
@@ -251,8 +245,8 @@ export default function DashboardScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={handleRefresh}
-            colors={['#2D6A4F']}
-            tintColor="#2D6A4F"
+            colors={['#0F5238']}
+            tintColor="#0F5238"
           />
         }
       >
@@ -316,14 +310,14 @@ export default function DashboardScreen() {
             <View className="flex-row gap-gutter">
               <StatCard
                 label="Aktif"
-                value={data?.livestock.active ?? (isLoading ? '...' : 124)}
+                value={data?.livestock.active ?? (isLoading ? '...' : 0)}
                 suffix="ekor"
                 icon="paw"
                 tone="active"
               />
               <StatCard
                 label="Sakit"
-                value={data?.livestock.sick ?? (isLoading ? '...' : 3)}
+                value={data?.livestock.sick ?? (isLoading ? '...' : 0)}
                 suffix="ekor"
                 icon="medical-bag"
                 tone="sick"
@@ -332,14 +326,14 @@ export default function DashboardScreen() {
             <View className="flex-row gap-gutter">
               <StatCard
                 label="Karantina"
-                value={data?.quarantine.active ?? (isLoading ? '...' : 2)}
+                value={data?.quarantine.active ?? (isLoading ? '...' : 0)}
                 suffix="ekor"
                 icon="alert"
                 tone="quarantine"
               />
               <StatCard
                 label="ADG Avg"
-                value={avgADG !== null ? formatADG(avgADG) : (isLoading ? '...' : '+128g')}
+                value={avgADG !== null ? formatADG(avgADG) : (isLoading ? '...' : '-')}
                 icon="trending-up"
                 tone="primary"
               />
@@ -408,20 +402,31 @@ export default function DashboardScreen() {
         <View className="px-gutter pb-lg">
           <SectionLabel>Aktivitas Hari Ini</SectionLabel>
           <View className="relative rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-sm">
-            <View className="absolute bottom-5 left-[27px] top-5 w-0.5 bg-outline-variant" />
-            {displayTimeline.map((item, i) => (
-              <TimelineMiniItem
-                key={`${item.title}-${item.time}`}
-                {...item}
-              />
-            ))}
+            {displayTimeline.length > 0 ? (
+              <>
+                <View className="absolute bottom-5 left-[27px] top-5 w-0.5 bg-outline-variant" />
+                {displayTimeline.map((item) => (
+                  <TimelineMiniItem
+                    key={`${item.title}-${item.time}`}
+                    {...item}
+                  />
+                ))}
+              </>
+            ) : (
+              <View className="items-center py-6">
+                <MaterialCommunityIcons name="clock-outline" size={32} color="#D0D5D2" />
+                <Text className="mt-2 font-body text-body-sm text-on-surface-variant">
+                  Belum ada aktivitas terbaru
+                </Text>
+              </View>
+            )}
           </View>
           <Pressable
             onPress={() => router.push('/(tabs)/livestock')}
             className="mt-3 flex-row items-center justify-center gap-1 py-2"
           >
             <Text className="font-label text-label-md font-semibold text-primary">Lihat semua aktivitas</Text>
-            <MaterialCommunityIcons name="arrow-right" size={16} color="#2D6A4F" />
+            <MaterialCommunityIcons name="arrow-right" size={16} color="#0F5238" />
           </Pressable>
         </View>
       </ScrollView>

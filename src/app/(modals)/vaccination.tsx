@@ -3,15 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -165,6 +157,7 @@ export default function VaccinationFormScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Top AppBar ── */}
       <View className="flex-row items-center justify-between bg-surface px-gutter py-sm shadow-sm">
         <View className="flex-row items-center gap-md">
@@ -492,6 +485,7 @@ export default function VaccinationFormScreen() {
           <Text className="text-label-md font-medium text-on-surface-variant">Batalkan</Text>
         </Pressable>
       </View>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

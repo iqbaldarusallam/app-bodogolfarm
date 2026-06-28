@@ -22,7 +22,7 @@ export async function getById(req: AuthenticatedRequest, res: Response, next: Ne
 
 export async function create(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const livestock = await livestockService.create({ ...req.body, farm_id: req.user!.farm_id }, req.user!.userId);
+    const livestock = await livestockService.create(req.body, req.user!.userId, req.user!.farm_id);
     res.status(201).json({ success: true, data: livestock });
   } catch (error) {
     next(error);

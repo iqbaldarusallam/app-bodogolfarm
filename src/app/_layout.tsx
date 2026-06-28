@@ -49,7 +49,7 @@ export default function RootLayout() {
   if (!hasHydrated) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FCF8FB' }}>
-        <ActivityIndicator size="large" color="#2D6A4F" />
+        <ActivityIndicator size="large" color="#0F5238" />
       </View>
     );
   }

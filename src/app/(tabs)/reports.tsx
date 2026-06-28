@@ -14,7 +14,20 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-const PERIOD_OPTIONS = ['Jun 2026', 'Mei 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+// 6 bulan terakhir, dinamis dari tanggal sekarang (terbaru di depan).
+function generatePeriods(count = 6): string[] {
+  const now = new Date();
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    out.push(`${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`);
+  }
+  return out;
+}
+
+const PERIOD_OPTIONS = generatePeriods();
 
 const REPORT_CATEGORIES: {
   title: string;
@@ -62,7 +75,7 @@ function ReportRow({
 
 export default function ReportsScreen() {
   const router = useRouter();
-  const [selectedPeriod, setSelectedPeriod] = useState('Jun 2026');
+  const [selectedPeriod, setSelectedPeriod] = useState(PERIOD_OPTIONS[0]);
   const [showPeriodSheet, setShowPeriodSheet] = useState(false);
 
   const handleReportPress = (category: (typeof REPORT_CATEGORIES)[number]) => {
@@ -111,7 +124,7 @@ export default function ReportsScreen() {
             </Text>
             <View className="mt-1 flex-row items-center gap-1">
               <Text className="font-headline text-headline-sm font-semibold text-on-surface">{selectedPeriod}</Text>
-              <MaterialCommunityIcons name="chevron-down" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="chevron-down" size={20} color="#0F5238" />
             </View>
           </Pressable>
           <Pressable
@@ -159,7 +172,7 @@ export default function ReportsScreen() {
                 {period}
               </Text>
               {selectedPeriod === period && (
-                <MaterialCommunityIcons name="check-circle" size={20} color="#2D6A4F" />
+                <MaterialCommunityIcons name="check-circle" size={20} color="#0F5238" />
               )}
             </Pressable>
           ))}

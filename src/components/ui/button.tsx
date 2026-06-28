@@ -34,7 +34,7 @@ const labelClasses: Record<ButtonVariant, string> = {
 
 const iconColors: Record<ButtonVariant, string> = {
   primary: '#FFFFFF',
-  secondary: '#2D6A4F',
+  secondary: '#0F5238',
   ghost: '#0F5238',
   danger: '#FFFFFF',
 };

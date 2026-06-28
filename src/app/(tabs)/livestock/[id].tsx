@@ -33,6 +33,8 @@ import { TimelineItem } from '@/components/ui/TimelineItem';
 import { FAB } from '@/components/ui/FAB';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { deleteLivestock } from '@/services/livestock';
+import { usePermissions } from '@/lib/permissions';
+import { WeightChart } from '@/components/ui/WeightChart';
 import type { LivestockDetail, LivestockStatus, Species } from '@/types/livestock';
 
 // ── Constants ──
@@ -185,7 +187,9 @@ export default function LivestockDetailScreen() {
   const [activeTab, setActiveTab] = useState('timeline');
   const [fabOpen, setFabOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const queryClient = useQueryClient();
+  const { canClearQuarantine, canDeleteLivestock } = usePermissions();
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteLivestock(id!),
@@ -218,7 +222,9 @@ export default function LivestockDetailScreen() {
       useNativeDriver: false,
       listener: (e: any) => {
         const y = e.nativeEvent.contentOffset.y;
-        isCollapsed.setValue(y > COLLAPSED_HEADER_THRESHOLD ? 1 : 0);
+        const c = y > COLLAPSED_HEADER_THRESHOLD;
+        isCollapsed.setValue(c ? 1 : 0);
+        setCollapsed(c); // React bail-out kalau nilainya sama
       },
     }),
     [scrollY, isCollapsed],
@@ -227,6 +233,13 @@ export default function LivestockDetailScreen() {
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, COLLAPSED_HEADER_THRESHOLD],
     outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  // Bar collapsed: 0 (sembunyi) di atas → 1 (muncul) saat di-scroll melewati ambang.
+  const appBarOpacity = scrollY.interpolate({
+    inputRange: [COLLAPSED_HEADER_THRESHOLD * 0.6, COLLAPSED_HEADER_THRESHOLD],
+    outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
@@ -338,14 +351,14 @@ export default function LivestockDetailScreen() {
     <View className="flex-1 bg-surface">
       {/* ── Collapsed AppBar ── */}
       <Animated.View
-        pointerEvents={isCollapsed as any}
+        pointerEvents={collapsed ? 'auto' : 'none'}
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
           zIndex: 50,
-          opacity: isCollapsed as any,
+          opacity: appBarOpacity,
         }}
       >
         <SafeAreaView edges={['top']}>
@@ -355,7 +368,7 @@ export default function LivestockDetailScreen() {
             </Pressable>
             <View className="flex-1">
               <Text className="font-mono text-label-md font-bold text-white">#{livestock.ear_tag}</Text>
-              <Text className="font-body text-body-sm text-white/80">{livestock.name ?? livestock.species}</Text>
+              <Text numberOfLines={1} className="font-body text-body-sm text-white/80">{livestock.name ?? livestock.species}</Text>
             </View>
             <StatusBadge status={livestock.current_status} />
             <Pressable
@@ -408,7 +421,7 @@ export default function LivestockDetailScreen() {
               className="absolute bottom-4 left-4 right-4"
             >
               <Text className="font-mono text-headline-sm font-bold text-white">#{livestock.ear_tag}</Text>
-              <Text className="mt-1 font-headline text-headline-lg font-semibold text-white">
+              <Text numberOfLines={1} className="mt-1 font-headline text-headline-lg font-semibold text-white">
                 {livestock.name ?? livestock.species}
               </Text>
               <View className="mt-2 flex-row items-center gap-2">
@@ -428,11 +441,11 @@ export default function LivestockDetailScreen() {
 
         {/* ── Info Chips ── */}
         <View className="border-b border-outline-variant bg-surface px-gutter py-3">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          <View className="flex-row flex-wrap gap-2">
             {infoChips.map((chip, i) => (
               <InfoChip key={i} icon={chip.icon} text={chip.text} />
             ))}
-          </ScrollView>
+          </View>
         </View>
 
         {/* ── Tab Bar ── */}
@@ -480,6 +493,11 @@ export default function LivestockDetailScreen() {
           {activeTab === 'growth' && (
             growthRecords && growthRecords.length > 0 ? (
               <View className="gap-3">
+                <WeightChart
+                  data={[...growthRecords]
+                    .reverse()
+                    .map((r) => ({ date: r.record_date, weight: r.weight_kg }))}
+                />
                 <Text className="mb-1 font-headline text-headline-sm font-semibold text-on-surface">Riwayat Penimbangan</Text>
                 {growthRecords.map((rec) => (
                   <View key={rec._id} className="flex-row items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
@@ -663,7 +681,7 @@ export default function LivestockDetailScreen() {
                 </View>
               </View>
 
-              {livestock.current_status === 'quarantine' && (
+              {livestock.current_status === 'quarantine' && canClearQuarantine && (
                 <Pressable
                   onPress={() =>
                     router.push({
@@ -729,6 +747,7 @@ export default function LivestockDetailScreen() {
                   nationalId: livestock.national_id ?? '',
                   rfidTag: livestock.rfid_tag ?? '',
                   notes: livestock.notes ?? '',
+                  photoUrl: livestock.photo_url ?? '',
                 },
               });
             }}
@@ -737,16 +756,18 @@ export default function LivestockDetailScreen() {
             <MaterialCommunityIcons name="pencil" size={22} color="#2D6A4F" />
             <Text className="text-body-lg text-on-surface">Edit Data Ternak</Text>
           </Pressable>
-          <Pressable
-            onPress={() => {
-              setMenuOpen(false);
-              handleDelete();
-            }}
-            className="flex-row items-center gap-3 rounded-xl border border-danger/20 bg-danger-light px-4 py-3.5 active:opacity-70"
-          >
-            <MaterialCommunityIcons name="delete" size={22} color="#BA1A1A" />
-            <Text className="text-body-lg font-semibold text-error">Hapus Ternak</Text>
-          </Pressable>
+          {canDeleteLivestock && (
+            <Pressable
+              onPress={() => {
+                setMenuOpen(false);
+                handleDelete();
+              }}
+              className="flex-row items-center gap-3 rounded-xl border border-danger/20 bg-danger-light px-4 py-3.5 active:opacity-70"
+            >
+              <MaterialCommunityIcons name="delete" size={22} color="#BA1A1A" />
+              <Text className="text-body-lg font-semibold text-error">Hapus Ternak</Text>
+            </Pressable>
+          )}
           <Pressable
             onPress={() => setMenuOpen(false)}
             className="items-center py-3"

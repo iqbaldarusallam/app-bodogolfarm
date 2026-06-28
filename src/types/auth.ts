@@ -2,7 +2,8 @@
 // Auth types — sinkron dengan backend validator & service
 // ─────────────────────────────────────────────────────────
 
-export type UserRole = 'admin' | 'senior_officer' | 'officer' | 'viewer';
+// Sinkron dengan enum backend (UserRole): officer < senior_officer < manager
+export type UserRole = 'officer' | 'senior_officer' | 'manager';
 
 export interface User {
   _id: string;

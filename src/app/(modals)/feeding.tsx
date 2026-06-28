@@ -3,14 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -165,6 +158,7 @@ export default function FeedingFormScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Top AppBar ── */}
       <View className="flex-row items-center justify-between bg-surface px-gutter py-sm">
         <View className="flex-row items-center gap-md">
@@ -329,7 +323,7 @@ export default function FeedingFormScreen() {
           {/* DMI Preview */}
           <View className="flex-row items-center justify-between rounded-xl border border-brand-light bg-brand-surface p-md">
             <View className="flex-row items-center gap-sm">
-              <MaterialCommunityIcons name="chart-bar" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="chart-bar" size={20} color="#0F5238" />
               <Text className="text-body-md text-primary-container">DMI Aktual (Estimasi)</Text>
             </View>
             <View className="flex-row items-baseline gap-1">
@@ -456,6 +450,7 @@ export default function FeedingFormScreen() {
           </Text>
         </Pressable>
       </View>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

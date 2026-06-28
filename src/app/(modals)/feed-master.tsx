@@ -3,14 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -184,6 +177,7 @@ export default function FeedMasterScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* Header */}
       <View className="flex-row items-center justify-between bg-surface px-gutter py-sm shadow-sm">
         <View className="flex-row items-center gap-md">
@@ -346,7 +340,7 @@ export default function FeedMasterScreen() {
         {/* Feed List */}
         {isLoading ? (
           <View className="items-center py-10">
-            <ActivityIndicator size="large" color="#2D6A4F" />
+            <ActivityIndicator size="large" color="#0F5238" />
             <Text className="mt-3 text-body-md text-on-surface-variant">Memuat data pakan...</Text>
           </View>
         ) : feeds.length === 0 ? (
@@ -439,6 +433,7 @@ export default function FeedMasterScreen() {
           </View>
         )}
       </ScrollView>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

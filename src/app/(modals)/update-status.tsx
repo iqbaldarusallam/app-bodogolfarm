@@ -3,16 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -34,7 +25,7 @@ const STATUS_OPTIONS: {
 }[] = [
   { key: 'sold', label: 'Terjual', icon: 'currency-usd', color: '#6D6875', bg: 'bg-status-sold/10', border: 'border-status-sold' },
   { key: 'dead', label: 'Mati', icon: 'heart-broken', color: '#495057', bg: 'bg-status-dead/10', border: 'border-status-dead' },
-  { key: 'transferred', label: 'Dipindah', icon: 'move-down', color: '#2D6A4F', bg: 'bg-secondary-container/30', border: 'border-secondary' },
+  { key: 'transferred', label: 'Dipindah', icon: 'move-down', color: '#0F5238', bg: 'bg-secondary-container/30', border: 'border-secondary' },
 ];
 
 const STATUS_LABELS: Record<LivestockStatus, string> = {
@@ -144,6 +135,7 @@ export default function UpdateStatusScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Top AppBar ── */}
       <View className="flex-row items-center justify-between bg-surface px-gutter py-sm shadow-sm">
         <View className="flex-row items-center gap-md">
@@ -392,6 +384,7 @@ export default function UpdateStatusScreen() {
           </View>
         </View>
       </Modal>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

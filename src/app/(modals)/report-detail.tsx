@@ -30,7 +30,7 @@ function GrowthReportView({ data }: { data: any[] }) {
       {data.map((rec: any) => (
         <View key={rec._id} className="flex-row items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
           <View className="h-10 w-10 items-center justify-center rounded-full bg-brand-light">
-            <MaterialCommunityIcons name="scale-bathroom" size={20} color="#2D6A4F" />
+            <MaterialCommunityIcons name="scale-bathroom" size={20} color="#0F5238" />
           </View>
           <View className="flex-1">
             <Text className="font-headline text-headline-sm font-semibold text-on-surface">

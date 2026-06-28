@@ -10,7 +10,7 @@ export function OfflineBanner() {
     <View className="flex-row items-center justify-center gap-2 bg-[#FFF8E1] px-4 py-2">
       <MaterialCommunityIcons name="wifi-off" size={14} color="#F57C00" />
       <Text className="text-caption font-medium text-[#F57C00]">
-        Tidak ada koneksi — Data disimpan lokal
+        Tidak ada koneksi — sambungkan internet untuk menyimpan data
       </Text>
     </View>
   );

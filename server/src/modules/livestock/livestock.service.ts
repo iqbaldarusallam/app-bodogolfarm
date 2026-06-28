@@ -29,7 +29,7 @@ export async function getAll(farmId: string, query: LivestockQueryInput) {
   };
 
   const [data, total] = await Promise.all([
-    Livestock.find(filter).sort(sort).skip(skip).limit(query.limit),
+    Livestock.find(filter).sort(sort).skip(skip).limit(query.limit).lean(),
     Livestock.countDocuments(filter),
   ]);
 
@@ -53,14 +53,14 @@ export async function getById(id: string, farmId: string) {
   return livestock;
 }
 
-export async function create(input: CreateLivestockInput, userId: string) {
+export async function create(input: CreateLivestockInput, userId: string, farmId: string) {
   const existing = await Livestock.findOne({
-    farm_id: input.farm_id,
+    farm_id: farmId,
     ear_tag: input.ear_tag,
   });
   if (existing) throw new AppError('Ear tag sudah ada di farm ini', 409);
 
-  const livestock = await Livestock.create({ ...input, created_by: userId });
+  const livestock = await Livestock.create({ ...input, farm_id: farmId, created_by: userId });
   await incrementOccupancy(input.current_pen_id as string);
   return livestock;
 }

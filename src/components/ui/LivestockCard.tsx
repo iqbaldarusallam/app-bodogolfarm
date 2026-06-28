@@ -1,4 +1,5 @@
 import { Pressable, View, Text } from 'react-native';
+import { Image } from 'expo-image';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBadge } from './StatusBadge';
 import type { Livestock, Species } from '@/types/livestock';
@@ -42,25 +43,36 @@ export function LivestockCard({ item, onPress }: LivestockCardProps) {
       onPress={onPress}
       className={`flex-row gap-3 rounded-xl p-3 shadow-sm active:opacity-70 ${cardBorder}`}
     >
-      <View className="h-[84px] w-20 items-center justify-center rounded-lg bg-surface-container-high">
-        <MaterialCommunityIcons name={speciesKey as any} size={34} color={iconColor} />
+      <View className="h-[84px] w-20 items-center justify-center overflow-hidden rounded-lg bg-surface-container-high">
+        {item.photo_url ? (
+          <Image
+            source={{ uri: item.photo_url }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            transition={150}
+          />
+        ) : (
+          <MaterialCommunityIcons name={speciesKey as any} size={34} color={iconColor} />
+        )}
       </View>
 
       <View className="flex-1 justify-between gap-3">
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1">
             <Text className="font-mono text-label-md font-bold text-primary">#{item.ear_tag}</Text>
-            <Text className="mt-0.5 font-headline text-headline-sm font-semibold text-on-surface">
+            <Text numberOfLines={1} className="mt-0.5 font-headline text-headline-sm font-semibold text-on-surface">
               {item.name ?? item.species} · {sexLabel}
             </Text>
-            <Text className="mt-0.5 font-caption text-caption text-on-surface-variant">
+            <Text numberOfLines={1} className="mt-0.5 font-caption text-caption text-on-surface-variant">
               Kandang: {penCode || '-'} · {item.breed}
             </Text>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={22} color="#707973" />
         </View>
 
-        <StatusBadge status={item.current_status} />
+        <View className="flex-row">
+          <StatusBadge status={item.current_status} />
+        </View>
       </View>
     </Pressable>
   );

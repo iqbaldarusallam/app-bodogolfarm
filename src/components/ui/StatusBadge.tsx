@@ -46,7 +46,7 @@ export function StatusBadge({ status }: { status: LivestockStatus }) {
       ) : (
         <View className={`h-2 w-2 rounded-full ${config.dot}`} />
       )}
-      <Text className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface-variant">{config.label}</Text>
+      <Text numberOfLines={1} className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface-variant">{config.label}</Text>
     </View>
   );
 }

@@ -18,7 +18,7 @@ export async function getGrowthReport(farmId: string, startDate?: string, endDat
 
   return GrowthRecord.find(filter)
     .populate('livestock_id', 'ear_tag name species breed')
-    .sort({ record_date: -1 });
+    .sort({ record_date: -1 }).lean();
 }
 
 export async function getFeedingReport(farmId: string, startDate?: string, endDate?: string) {
@@ -35,7 +35,7 @@ export async function getFeedingReport(farmId: string, startDate?: string, endDa
   return FeedingLog.find(filter)
     .populate('livestock_id', 'ear_tag name')
     .populate('feed_master_id', 'feed_name feed_type')
-    .sort({ feed_date: -1 });
+    .sort({ feed_date: -1 }).lean();
 }
 
 export async function getHealthReport(farmId: string, startDate?: string, endDate?: string) {
@@ -52,7 +52,7 @@ export async function getHealthReport(farmId: string, startDate?: string, endDat
   return HealthRecord.find(filter)
     .populate('livestock_id', 'ear_tag name')
     .populate('examiner', 'name')
-    .sort({ record_date: -1 });
+    .sort({ record_date: -1 }).lean();
 }
 
 export async function getMedicationReport(farmId: string, startDate?: string, endDate?: string) {
@@ -69,7 +69,7 @@ export async function getMedicationReport(farmId: string, startDate?: string, en
   return MedicationLog.find(filter)
     .populate('livestock_id', 'ear_tag name')
     .populate('health_record_id', 'record_date diagnosis')
-    .sort({ start_date: -1 });
+    .sort({ start_date: -1 }).lean();
 }
 
 export async function getStatusReport(farmId: string, startDate?: string, endDate?: string) {
@@ -86,7 +86,7 @@ export async function getStatusReport(farmId: string, startDate?: string, endDat
   return StatusHistory.find(filter)
     .populate('livestock_id', 'ear_tag name')
     .populate('changed_by', 'name')
-    .sort({ changed_date: -1 });
+    .sort({ changed_date: -1 }).lean();
 }
 
 export async function getWithdrawalAlert(farmId: string) {
@@ -98,7 +98,7 @@ export async function getWithdrawalAlert(farmId: string) {
     withdrawal_end_date: { $gte: new Date() },
   })
     .populate('livestock_id', 'ear_tag name species breed current_status')
-    .sort({ withdrawal_end_date: 1 });
+    .sort({ withdrawal_end_date: 1 }).lean();
 }
 
 export async function getVaccinationDue(farmId: string) {
@@ -113,7 +113,7 @@ export async function getVaccinationDue(farmId: string) {
     booster_due_date: { $lte: in30Days },
   })
     .populate('livestock_id', 'ear_tag name species breed')
-    .sort({ booster_due_date: 1 });
+    .sort({ booster_due_date: 1 }).lean();
 }
 
 export async function getReproductionReport(farmId: string, startDate?: string, endDate?: string) {
@@ -131,5 +131,5 @@ export async function getReproductionReport(farmId: string, startDate?: string, 
   return ReproductionRecord.find(filter)
     .populate('livestock_id', 'ear_tag name')
     .populate('sire_id', 'ear_tag name')
-    .sort({ event_date: -1 });
+    .sort({ event_date: -1 }).lean();
 }

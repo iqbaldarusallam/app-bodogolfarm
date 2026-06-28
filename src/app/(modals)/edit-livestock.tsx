@@ -3,14 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useState } from 'react';
-import {
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-} from 'react-native';
+import { Platform, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,6 +11,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { updateLivestock } from '@/services/livestock';
+import { PhotoPicker } from '@/components/ui/PhotoPicker';
 
 // ── Constants ──
 
@@ -72,6 +66,7 @@ export default function EditLivestockScreen() {
     nationalId: string;
     rfidTag: string;
     notes: string;
+    photoUrl: string;
   }>();
 
   const [earTag, setEarTag] = useState(params.earTag ?? '');
@@ -88,6 +83,7 @@ export default function EditLivestockScreen() {
   const [nationalId, setNationalId] = useState(params.nationalId ?? '');
   const [rfidTag, setRfidTag] = useState(params.rfidTag ?? '');
   const [notes, setNotes] = useState(params.notes ?? '');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(params.photoUrl || null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const onBirthDateChange = useCallback((_: DateTimePickerEvent, selectedDate?: Date) => {
@@ -137,14 +133,18 @@ export default function EditLivestockScreen() {
     if (rfidTag.trim()) input.rfid_tag = rfidTag.trim();
     if (selectedPenId) input.current_pen_id = selectedPenId;
     if (notes.trim()) input.notes = notes.trim();
+    // foto: kirim url baru, atau null untuk menghapus (jika sebelumnya ada)
+    if (photoUrl) input.photo_url = photoUrl;
+    else if (params.photoUrl) input.photo_url = null;
 
     mutation.mutate(input);
-  }, [validate, earTag, name, species, breed, sex, birthDate, origin, selectedPenId, nationalId, rfidTag, notes, mutation]);
+  }, [validate, earTag, name, species, breed, sex, birthDate, origin, selectedPenId, nationalId, rfidTag, notes, photoUrl, params.photoUrl, mutation]);
 
   const breeds = BREED_OPTIONS[species] || [];
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Header ── */}
       <View className="flex-row items-center bg-surface px-gutter py-sm shadow-sm">
         <Pressable
@@ -165,10 +165,15 @@ export default function EditLivestockScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-xl">
+          {/* ── Foto Ternak ── */}
+          <View className="items-center">
+            <PhotoPicker value={photoUrl} onChange={setPhotoUrl} />
+          </View>
+
           {/* ── Identitas Ternak ── */}
           <View className="gap-md">
             <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="tag" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="tag" size={20} color="#0F5238" />
               <Text className="font-headline text-headline-sm font-bold uppercase tracking-wider text-primary">Identitas Ternak</Text>
             </View>
 
@@ -223,7 +228,7 @@ export default function EditLivestockScreen() {
           {/* ── Spesies & Ras ── */}
           <View className="gap-md">
             <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="paw" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="paw" size={20} color="#0F5238" />
               <Text className="font-headline text-headline-sm font-bold uppercase tracking-wider text-primary">Spesies & Ras</Text>
             </View>
 
@@ -238,7 +243,7 @@ export default function EditLivestockScreen() {
                       species === s.key ? 'border-primary bg-primary/10' : 'border-outline-variant bg-surface'
                     }`}
                   >
-                    <MaterialCommunityIcons name={s.icon as any} size={20} color={species === s.key ? '#2D6A4F' : '#707973'} />
+                    <MaterialCommunityIcons name={s.icon as any} size={20} color={species === s.key ? '#0F5238' : '#707973'} />
                     <Text className={`text-label-md font-medium ${species === s.key ? 'text-primary' : 'text-on-surface-variant'}`}>{s.label}</Text>
                   </Pressable>
                 ))}
@@ -277,7 +282,7 @@ export default function EditLivestockScreen() {
                       sex === s.key ? 'border-primary bg-primary/10' : 'border-outline-variant bg-surface'
                     }`}
                   >
-                    <MaterialCommunityIcons name={s.icon as any} size={20} color={sex === s.key ? '#2D6A4F' : '#707973'} />
+                    <MaterialCommunityIcons name={s.icon as any} size={20} color={sex === s.key ? '#0F5238' : '#707973'} />
                     <Text className={`text-label-md font-medium ${sex === s.key ? 'text-primary' : 'text-on-surface-variant'}`}>{s.label}</Text>
                   </Pressable>
                 ))}
@@ -289,7 +294,7 @@ export default function EditLivestockScreen() {
           {/* ── Tanggal Lahir ── */}
           <View className="gap-md">
             <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="calendar" size={20} color="#2D6A4F" />
+              <MaterialCommunityIcons name="calendar" size={20} color="#0F5238" />
               <Text className="font-headline text-headline-sm font-bold uppercase tracking-wider text-primary">Tanggal Lahir</Text>
             </View>
 
@@ -343,6 +348,7 @@ export default function EditLivestockScreen() {
           </Pressable>
         </View>
       </ScrollView>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

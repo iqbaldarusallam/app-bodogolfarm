@@ -77,6 +77,11 @@ api.interceptors.response.use(
       }
     }
 
+    // Tidak ada response = masalah jaringan/timeout (app ini online-only).
+    if (!error.response) {
+      error.message = 'Tidak ada koneksi ke server. Periksa internet kamu lalu coba lagi.';
+    }
+
     return Promise.reject(error);
   },
 );

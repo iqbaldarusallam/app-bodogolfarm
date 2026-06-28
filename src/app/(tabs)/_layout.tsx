@@ -6,12 +6,15 @@ import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 
+import { usePermissions } from '@/lib/permissions';
+
 export default function TabsLayout() {
+  const { canViewReports } = usePermissions();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#00734D',
+        tabBarActiveTintColor: '#0F5238',
         tabBarInactiveTintColor: '#404943',
         tabBarStyle: {
           height: Platform.select({ ios: 84, android: 72 }),
@@ -61,6 +64,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="reports"
         options={{
+          // Laporan hanya untuk senior officer ke atas; sembunyikan tab utk officer.
+          href: canViewReports ? undefined : null,
           title: 'Laporan',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chart-bar" size={size} color={color} />

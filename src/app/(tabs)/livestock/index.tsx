@@ -71,7 +71,7 @@ function FilterChip({
 function LoadingFooter() {
   return (
     <View className="py-6">
-      <ActivityIndicator size="small" color="#2D6A4F" />
+      <ActivityIndicator size="small" color="#0F5238" />
     </View>
   );
 }
@@ -123,7 +123,7 @@ export default function LivestockListScreen() {
     [page, statusFilter, speciesFilter, appliedSearch, sortParams],
   );
 
-  const { data, isLoading, isFetching, isError } = useLivestockList(query);
+  const { data, isLoading, isFetching, isError, refetch } = useLivestockList(query);
 
   const items = data?.data ?? [];
   const pagination = data?.pagination;
@@ -253,12 +253,17 @@ export default function LivestockListScreen() {
         onEndReachedThreshold={0.4}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View className="h-2" />}
+        refreshing={isFetching && page === 1}
+        onRefresh={() => {
+          setPage(1);
+          refetch();
+        }}
       />
 
       {/* Loading overlay */}
       {isLoading && (
         <View className="absolute inset-0 items-center justify-center bg-surface/60">
-          <ActivityIndicator size="large" color="#2D6A4F" />
+          <ActivityIndicator size="large" color="#0F5238" />
         </View>
       )}
 
@@ -308,7 +313,7 @@ export default function LivestockListScreen() {
                 {opt.label}
               </Text>
               {activeSort === opt.key && (
-                <MaterialCommunityIcons name="check-circle" size={20} color="#2D6A4F" />
+                <MaterialCommunityIcons name="check-circle" size={20} color="#0F5238" />
               )}
             </Pressable>
           ))}

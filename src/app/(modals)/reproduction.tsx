@@ -3,16 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-} from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -200,6 +191,7 @@ export default function ReproductionFormScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Top AppBar ── */}
       <View className="flex-row items-center bg-surface px-gutter py-sm shadow-sm">
         <Pressable
@@ -329,7 +321,7 @@ export default function ReproductionFormScreen() {
                       <MaterialCommunityIcons
                         name={m.icon as any}
                         size={20}
-                        color={matingType === m.key ? '#2D6A4F' : '#707973'}
+                        color={matingType === m.key ? '#0F5238' : '#707973'}
                       />
                       <Text
                         className={`text-label-md font-medium ${
@@ -556,6 +548,7 @@ export default function ReproductionFormScreen() {
           </Pressable>
         </View>
       </ScrollView>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -3,16 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-  Text,
-  Switch,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, TextInput, View, Text, Switch, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -159,6 +150,7 @@ export default function HealthFormScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* ── Top AppBar ── */}
       <View className="flex-row items-center bg-surface px-gutter py-sm shadow-sm">
         <Pressable
@@ -260,7 +252,7 @@ export default function HealthFormScreen() {
               {/* Nafas */}
               <View className="w-[48%] rounded-lg border border-outline-variant bg-surface p-3">
                 <View className="flex-row items-center gap-1 mb-1">
-                  <MaterialCommunityIcons name="weather-windy" size={16} color="#2D6A4F" />
+                  <MaterialCommunityIcons name="weather-windy" size={16} color="#0F5238" />
                   <Text className="text-caption text-on-surface-variant">Nafas</Text>
                 </View>
                 <View className="flex-row items-baseline gap-1">
@@ -453,7 +445,7 @@ export default function HealthFormScreen() {
               <Switch
                 value={referralNeeded}
                 onValueChange={setReferralNeeded}
-                trackColor={{ false: '#BFC9C1', true: '#2D6A4F' }}
+                trackColor={{ false: '#BFC9C1', true: '#0F5238' }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -505,6 +497,7 @@ export default function HealthFormScreen() {
           </Text>
         </Pressable>
       </View>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Livestock } from '../../models/livestock.model';
 import { GrowthRecord } from '../../models/growth-record.model';
 import { HealthRecord } from '../../models/health-record.model';
@@ -5,9 +6,27 @@ import { QuarantineRecord } from '../../models/quarantine-record.model';
 import { VaccinationRecord } from '../../models/vaccination-record.model';
 import { MedicationLog } from '../../models/medication-log.model';
 import { ReproductionRecord } from '../../models/reproduction-record.model';
-import { LivestockStatus, QuarantineStatus } from '../../types/enums';
+import {
+  LivestockStatus,
+  LivestockSex,
+  PregnancyStatus,
+  QuarantineStatus,
+} from '../../types/enums';
 
 export async function getSummary(farmId: string) {
+  // aggregate $match TIDAK auto-cast string → ObjectId, jadi cast manual.
+  const farmObjectId = new mongoose.Types.ObjectId(farmId);
+
+  // Ambil id ternak SEKALI saja lalu dipakai ulang (sebelumnya 6x query distinct identik).
+  const [livestockIds, femaleIds] = await Promise.all([
+    Livestock.find({ farm_id: farmId }).distinct('_id'),
+    Livestock.find({ farm_id: farmId, sex: LivestockSex.FEMALE }).distinct('_id'),
+  ]);
+
+  const now = new Date();
+  const twoWeeks = new Date();
+  twoWeeks.setDate(twoWeeks.getDate() + 14);
+
   const [
     totalLivestock,
     statusCounts,
@@ -21,73 +40,62 @@ export async function getSummary(farmId: string) {
     // Total ternak
     Livestock.countDocuments({ farm_id: farmId }),
 
-    // Hitung per status
+    // Hitung per status (ObjectId cast)
     Livestock.aggregate([
-      { $match: { farm_id: farmId } },
+      { $match: { farm_id: farmObjectId } },
       { $group: { _id: '$current_status', count: { $sum: 1 } } },
     ]),
 
     // 5 record pertumbuhan terakhir
-    Livestock.find({ farm_id: farmId }).distinct('_id').then((ids) =>
-      GrowthRecord.find({ livestock_id: { $in: ids } })
-        .populate('livestock_id', 'ear_tag name')
-        .sort({ record_date: -1 })
-        .limit(5),
-    ),
+    GrowthRecord.find({ livestock_id: { $in: livestockIds } })
+      .populate('livestock_id', 'ear_tag name')
+      .sort({ record_date: -1 })
+      .limit(5)
+      .lean(),
 
-    // Karantina aktif
-    Livestock.find({ farm_id: farmId }).distinct('_id').then((ids) =>
-      QuarantineRecord.find({
-        livestock_id: { $in: ids },
-        status: QuarantineStatus.ACTIVE,
-      })
-        .populate('livestock_id', 'ear_tag name')
-        .countDocuments(),
-    ),
-
-    // Booster yang akan jatuh tempo (14 hari ke depan)
-    Livestock.find({ farm_id: farmId }).distinct('_id').then((ids) => {
-      const twoWeeks = new Date();
-      twoWeeks.setDate(twoWeeks.getDate() + 14);
-      return VaccinationRecord.find({
-        livestock_id: { $in: ids },
-        booster_due_date: { $gte: new Date(), $lte: twoWeeks },
-      })
-        .populate('livestock_id', 'ear_tag name')
-        .sort({ booster_due_date: 1 })
-        .limit(5);
+    // Karantina aktif (count langsung, tanpa populate)
+    QuarantineRecord.countDocuments({
+      livestock_id: { $in: livestockIds },
+      status: QuarantineStatus.ACTIVE,
     }),
 
-    // Withdrawal aktif
-    Livestock.find({ farm_id: farmId }).distinct('_id').then((ids) =>
-      MedicationLog.find({
-        livestock_id: { $in: ids },
-        withdrawal_end_date: { $gte: new Date() },
-      })
-        .populate('livestock_id', 'ear_tag name')
-        .sort({ withdrawal_end_date: 1 })
-        .limit(5),
-    ),
+    // Booster jatuh tempo (14 hari ke depan)
+    VaccinationRecord.find({
+      livestock_id: { $in: livestockIds },
+      booster_due_date: { $gte: now, $lte: twoWeeks },
+    })
+      .populate('livestock_id', 'ear_tag name')
+      .sort({ booster_due_date: 1 })
+      .limit(5)
+      .lean(),
 
-    // Bunting
-    Livestock.find({ farm_id: farmId, sex: 'female' }).distinct('_id').then((ids) =>
-      ReproductionRecord.find({
-        livestock_id: { $in: ids },
-        pregnancy_status: 'positive',
-      })
-        .populate('livestock_id', 'ear_tag name')
-        .sort({ event_date: -1 })
-        .limit(5),
-    ),
+    // Withdrawal aktif
+    MedicationLog.find({
+      livestock_id: { $in: livestockIds },
+      withdrawal_end_date: { $gte: now },
+    })
+      .populate('livestock_id', 'ear_tag name')
+      .sort({ withdrawal_end_date: 1 })
+      .limit(5)
+      .lean(),
+
+    // Bunting (hanya ternak betina)
+    ReproductionRecord.find({
+      livestock_id: { $in: femaleIds },
+      pregnancy_status: PregnancyStatus.POSITIVE,
+    })
+      .populate('livestock_id', 'ear_tag name')
+      .sort({ event_date: -1 })
+      .limit(5)
+      .lean(),
 
     // Pemeriksaan kesehatan terakhir
-    Livestock.find({ farm_id: farmId }).distinct('_id').then((ids) =>
-      HealthRecord.find({ livestock_id: { $in: ids } })
-        .populate('livestock_id', 'ear_tag name')
-        .populate('examiner', 'name')
-        .sort({ record_date: -1 })
-        .limit(5),
-    ),
+    HealthRecord.find({ livestock_id: { $in: livestockIds } })
+      .populate('livestock_id', 'ear_tag name')
+      .populate('examiner', 'name')
+      .sort({ record_date: -1 })
+      .limit(5)
+      .lean(),
   ]);
 
   // Format status counts

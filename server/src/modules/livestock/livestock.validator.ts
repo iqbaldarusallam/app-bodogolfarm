@@ -8,7 +8,7 @@ import {
 } from '../../types/enums';
 
 export const createLivestockSchema = z.object({
-  farm_id: z.string().min(1, 'Farm wajib diisi'),
+  // farm_id TIDAK diterima dari client — di-inject server dari user yang login.
   ear_tag: z.string().min(1, 'Ear tag wajib diisi').trim(),
   national_id: z.string().trim().optional(),
   rfid_tag: z.string().trim().optional(),
@@ -48,7 +48,8 @@ export const updateLivestockSchema = z.object({
   current_status: z.nativeEnum(LivestockStatus).optional(),
   dam_id: z.string().optional(),
   sire_id: z.string().optional(),
-  photo_url: z.string().url().optional(),
+  // nullable: kirim null untuk menghapus foto
+  photo_url: z.string().url().nullable().optional(),
   notes: z.string().trim().optional(),
 });
 
