@@ -4,7 +4,7 @@ import { SyncOperation, SyncStatus } from '../types/enums';
 // ── Interface ──
 export interface IOfflineQueue extends Document {
   _id: mongoose.Types.ObjectId;
-  collection: string;
+  target_collection: string;
   operation: SyncOperation;
   payload: Record<string, unknown>;
   created_at: Date;
@@ -15,7 +15,7 @@ export interface IOfflineQueue extends Document {
 // ── Schema ──
 const offlineQueueSchema = new Schema<IOfflineQueue>(
   {
-    collection: {
+    target_collection: {
       type: String,
       required: [true, 'Nama collection wajib diisi'],
       trim: true,
@@ -55,7 +55,7 @@ const offlineQueueSchema = new Schema<IOfflineQueue>(
 
 // ── Indexes ──
 offlineQueueSchema.index({ sync_status: 1, created_at: 1 });
-offlineQueueSchema.index({ collection: 1, operation: 1 });
+offlineQueueSchema.index({ target_collection: 1, operation: 1 });
 
 // ── Model ──
 export const OfflineQueue: Model<IOfflineQueue> = mongoose.model<IOfflineQueue>(

@@ -13,7 +13,7 @@ export async function getAll(_req: AuthenticatedRequest, res: Response, next: Ne
 
 export async function getById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const farm = await farmsService.getById(req.params.id);
+    const farm = await farmsService.getById(req.params.id as string);
     res.status(200).json({ success: true, data: farm });
   } catch (error) {
     next(error);
@@ -31,7 +31,7 @@ export async function create(req: AuthenticatedRequest, res: Response, next: Nex
 
 export async function update(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const farm = await farmsService.update(req.params.id, req.body);
+    const farm = await farmsService.update(req.params.id as string, req.body);
     res.status(200).json({ success: true, data: farm });
   } catch (error) {
     next(error);
@@ -40,7 +40,7 @@ export async function update(req: AuthenticatedRequest, res: Response, next: Nex
 
 export async function remove(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const result = await farmsService.remove(req.params.id);
+    const result = await farmsService.remove(req.params.id as string);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

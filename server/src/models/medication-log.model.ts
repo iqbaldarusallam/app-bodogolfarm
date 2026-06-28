@@ -36,7 +36,7 @@ const medicationLogSchema = new Schema<IMedicationLog>(
     health_record_id: {
       type: Schema.Types.ObjectId,
       ref: 'HealthRecord',
-      required: [true, 'Catatan kesehatan wajib diisi'],
+      required: false,
     },
     livestock_id: {
       type: Schema.Types.ObjectId,
@@ -157,13 +157,12 @@ medicationLogSchema.index({ health_record_id: 1 });
 medicationLogSchema.index({ livestock_id: 1, response: 1 });
 
 // ── Hooks: hitung withdrawal_end_date ──
-medicationLogSchema.pre('save', function (next) {
+medicationLogSchema.pre('save', function () {
   if (this.withdrawal_period_days && this.start_date) {
     const endDate = new Date(this.start_date);
     endDate.setDate(endDate.getDate() + this.withdrawal_period_days);
     this.withdrawal_end_date = endDate;
   }
-  next();
 });
 
 // ── Virtuals ──

@@ -177,7 +177,7 @@ reproductionRecordSchema.index({ sire_id: 1 });
 reproductionRecordSchema.index({ pregnancy_status: 1 });
 
 // ── Hooks: hitung expected_birth_date ──
-reproductionRecordSchema.pre('save', function (next) {
+reproductionRecordSchema.pre('save', function () {
   if (
     this.gestation_days_expected &&
     this.event_date &&
@@ -187,7 +187,6 @@ reproductionRecordSchema.pre('save', function (next) {
     expected.setDate(expected.getDate() + this.gestation_days_expected);
     this.expected_birth_date = expected;
   }
-  next();
 });
 
 // ── Virtuals ──

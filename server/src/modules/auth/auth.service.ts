@@ -124,3 +124,14 @@ export async function refreshToken(token: string) {
     throw new AppError('Refresh token tidak valid', 401);
   }
 }
+
+// ── Logout ──
+export async function logout(userId: string) {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError('User tidak ditemukan', 404);
+  }
+  // Client clears tokens locally; server acknowledges.
+  // Future: add token blacklist/revocation store for true server-side invalidation.
+  return { message: 'Berhasil logout' };
+}

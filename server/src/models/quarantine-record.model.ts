@@ -7,6 +7,7 @@ export interface IQuarantineRecord extends Document {
   livestock_id: mongoose.Types.ObjectId;
   health_record_id: mongoose.Types.ObjectId;
   quarantine_pen_id: mongoose.Types.ObjectId;
+  original_pen_id: mongoose.Types.ObjectId;
   start_date: Date;
   expected_duration_days: number;
   end_date?: Date;
@@ -39,6 +40,11 @@ const quarantineRecordSchema = new Schema<IQuarantineRecord>(
       type: Schema.Types.ObjectId,
       ref: 'Pen',
       required: [true, 'Kandang karantina wajib diisi'],
+    },
+    original_pen_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'Pen',
+      required: [true, 'Kandang asal wajib dicatat'],
     },
     start_date: {
       type: Date,

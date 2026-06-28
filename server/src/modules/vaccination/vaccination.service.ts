@@ -1,5 +1,5 @@
 import { VaccinationRecord } from '../../models/vaccination-record.model';
-import { AppError } from '../../middlewares';
+import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
 import { CreateVaccinationRecordInput, UpdateVaccinationRecordInput } from './vaccination.validator';
 
 export async function getByLivestock(livestockId: string) {
@@ -8,9 +8,11 @@ export async function getByLivestock(livestockId: string) {
     .sort({ vaccination_date: -1 });
 }
 
-export async function getById(id: string) {
-  const record = await VaccinationRecord.findById(id).populate('administered_by', 'name');
-  if (!record) throw new AppError('Catatan vaksinasi tidak ditemukan', 404);
+export async function getById(id: string, farmId: string) {
+  const record = await VaccinationRecord.findById(id)
+    .populate('livestock_id', 'farm_id')
+    .populate('administered_by', 'name');
+  assertLivestockBelongsToFarm(record, farmId, 'Catatan vaksinasi');
   return record;
 }
 
@@ -29,18 +31,20 @@ export async function create(input: CreateVaccinationRecordInput, userId: string
   });
 }
 
-export async function update(id: string, input: UpdateVaccinationRecordInput) {
+export async function update(id: string, input: UpdateVaccinationRecordInput, farmId: string) {
+  const existing = await VaccinationRecord.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(existing, farmId, 'Catatan vaksinasi');
   const record = await VaccinationRecord.findByIdAndUpdate(id, input, {
     new: true,
     runValidators: true,
   });
-  if (!record) throw new AppError('Catatan vaksinasi tidak ditemukan', 404);
   return record;
 }
 
-export async function remove(id: string) {
-  const record = await VaccinationRecord.findByIdAndDelete(id);
-  if (!record) throw new AppError('Catatan vaksinasi tidak ditemukan', 404);
+export async function remove(id: string, farmId: string) {
+  const record = await VaccinationRecord.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(record, farmId, 'Catatan vaksinasi');
+  await VaccinationRecord.findByIdAndDelete(id);
   return { message: 'Catatan vaksinasi berhasil dihapus' };
 }
 

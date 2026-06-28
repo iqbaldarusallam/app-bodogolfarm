@@ -71,3 +71,35 @@ export async function getStatusReport(req: AuthenticatedRequest, res: Response, 
     next(error);
   }
 }
+
+export async function getWithdrawalAlert(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const report = await reportsService.getWithdrawalAlert(req.user!.farm_id);
+    res.status(200).json({ success: true, data: report });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getVaccinationDue(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const report = await reportsService.getVaccinationDue(req.user!.farm_id);
+    res.status(200).json({ success: true, data: report });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getReproductionReport(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const { start_date, end_date } = req.query;
+    const report = await reportsService.getReproductionReport(
+      req.user!.farm_id,
+      start_date as string,
+      end_date as string,
+    );
+    res.status(200).json({ success: true, data: report });
+  } catch (error) {
+    next(error);
+  }
+}

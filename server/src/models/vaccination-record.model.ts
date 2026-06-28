@@ -101,13 +101,12 @@ vaccinationRecordSchema.index({ booster_due_date: 1 });
 vaccinationRecordSchema.index({ livestock_id: 1, vaccine_name: 1 });
 
 // ── Hooks: default booster +90 hari ──
-vaccinationRecordSchema.pre('save', function (next) {
+vaccinationRecordSchema.pre('save', function () {
   if (!this.booster_due_date && this.vaccination_date) {
     const booster = new Date(this.vaccination_date);
     booster.setDate(booster.getDate() + 90);
     this.booster_due_date = booster;
   }
-  next();
 });
 
 // ── Virtuals ──

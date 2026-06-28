@@ -46,3 +46,12 @@ export async function refreshToken(req: AuthenticatedRequest, res: Response, nex
     next(error);
   }
 }
+
+export async function logout(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const result = await authService.logout(req.user!.userId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+}

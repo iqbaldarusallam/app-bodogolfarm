@@ -13,7 +13,7 @@ export async function pushToQueue(payload: {
   payload: Record<string, unknown>;
 }) {
   return OfflineQueue.create({
-    collection: payload.collection,
+    target_collection: payload.collection,
     operation: payload.operation,
     payload: payload.payload,
     sync_status: SyncStatus.PENDING,

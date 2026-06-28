@@ -23,4 +23,13 @@ router.get('/medication', reportsController.getMedicationReport);
 // GET /api/reports/status
 router.get('/status', reportsController.getStatusReport);
 
+// GET /api/reports/withdrawal-alert
+router.get('/withdrawal-alert', reportsController.getWithdrawalAlert);
+
+// GET /api/reports/vaccination-due
+router.get('/vaccination-due', reportsController.getVaccinationDue);
+
+// GET /api/reports/reproduction
+router.get('/reproduction', reportsController.getReproductionReport);
+
 export default router;

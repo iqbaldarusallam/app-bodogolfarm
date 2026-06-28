@@ -1,14 +1,14 @@
 import { User } from '../../models/user.model';
-import { AppError } from '../../middlewares';
+import { AppError, assertBelongsToFarm } from '../../middlewares';
 import { CreateUserInput, UpdateUserInput } from './users.validator';
 
 export async function getAll(farmId: string) {
   return User.find({ farm_id: farmId }).sort({ created_at: -1 });
 }
 
-export async function getById(id: string) {
+export async function getById(id: string, farmId: string) {
   const user = await User.findById(id);
-  if (!user) throw new AppError('User tidak ditemukan', 404);
+  assertBelongsToFarm(user, farmId, 'User');
   return user;
 }
 
@@ -18,17 +18,19 @@ export async function create(input: CreateUserInput) {
   return User.create(input);
 }
 
-export async function update(id: string, input: UpdateUserInput) {
+export async function update(id: string, input: UpdateUserInput, farmId: string) {
+  const existing = await User.findById(id);
+  assertBelongsToFarm(existing, farmId, 'User');
   const user = await User.findByIdAndUpdate(id, input, {
     new: true,
     runValidators: true,
   });
-  if (!user) throw new AppError('User tidak ditemukan', 404);
   return user;
 }
 
-export async function remove(id: string) {
-  const user = await User.findByIdAndDelete(id);
-  if (!user) throw new AppError('User tidak ditemukan', 404);
+export async function remove(id: string, farmId: string) {
+  const user = await User.findById(id);
+  assertBelongsToFarm(user, farmId, 'User');
+  await User.findByIdAndDelete(id);
   return { message: 'User berhasil dihapus' };
 }

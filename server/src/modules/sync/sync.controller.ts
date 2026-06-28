@@ -22,7 +22,7 @@ export async function pushToQueue(req: AuthenticatedRequest, res: Response, next
 
 export async function markSynced(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const item = await syncService.markSynced(req.params.id);
+    const item = await syncService.markSynced(req.params.id as string);
     res.status(200).json({ success: true, data: item });
   } catch (error) {
     next(error);
@@ -31,7 +31,7 @@ export async function markSynced(req: AuthenticatedRequest, res: Response, next:
 
 export async function markFailed(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const item = await syncService.markFailed(req.params.id);
+    const item = await syncService.markFailed(req.params.id as string);
     res.status(200).json({ success: true, data: item });
   } catch (error) {
     next(error);

@@ -1,6 +1,6 @@
 import { FeedingLog } from '../../models/feeding-log.model';
 import { FeedMaster } from '../../models/feed-master.model';
-import { AppError } from '../../middlewares';
+import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
 import { CreateFeedingLogInput, UpdateFeedingLogInput } from './feeding.validator';
 
 export async function getByLivestock(livestockId: string) {
@@ -9,12 +9,14 @@ export async function getByLivestock(livestockId: string) {
     .sort({ feed_date: -1 });
 }
 
-export async function getById(id: string) {
-  const log = await FeedingLog.findById(id).populate(
-    'feed_master_id',
-    'feed_name feed_type dry_matter_pct price_per_unit unit',
-  );
-  if (!log) throw new AppError('Log pakan tidak ditemukan', 404);
+export async function getById(id: string, farmId: string) {
+  const log = await FeedingLog.findById(id)
+    .populate('livestock_id', 'farm_id')
+    .populate(
+      'feed_master_id',
+      'feed_name feed_type dry_matter_pct price_per_unit unit',
+    );
+  assertLivestockBelongsToFarm(log, farmId, 'Log pakan');
   return log;
 }
 
@@ -40,17 +42,19 @@ export async function create(input: CreateFeedingLogInput, userId: string) {
   });
 }
 
-export async function update(id: string, input: UpdateFeedingLogInput) {
+export async function update(id: string, input: UpdateFeedingLogInput, farmId: string) {
+  const existing = await FeedingLog.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(existing, farmId, 'Log pakan');
   const log = await FeedingLog.findByIdAndUpdate(id, input, {
     new: true,
     runValidators: true,
   });
-  if (!log) throw new AppError('Log pakan tidak ditemukan', 404);
   return log;
 }
 
-export async function remove(id: string) {
-  const log = await FeedingLog.findByIdAndDelete(id);
-  if (!log) throw new AppError('Log pakan tidak ditemukan', 404);
+export async function remove(id: string, farmId: string) {
+  const log = await FeedingLog.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(log, farmId, 'Log pakan');
+  await FeedingLog.findByIdAndDelete(id);
   return { message: 'Log pakan berhasil dihapus' };
 }

@@ -7,7 +7,7 @@ import {
 } from '../../types/enums';
 
 export const createMedicationLogSchema = z.object({
-  health_record_id: z.string().min(1, 'Catatan kesehatan wajib diisi'),
+  health_record_id: z.string().optional(),
   livestock_id: z.string().min(1, 'Ternak wajib diisi'),
   medication_type: z.nativeEnum(MedicationType, { error: () => ({ message: 'Jenis pengobatan tidak valid' }) }),
   medicine_name: z.string().min(1, 'Nama obat wajib diisi').trim(),

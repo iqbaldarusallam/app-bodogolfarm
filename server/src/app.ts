@@ -5,7 +5,10 @@
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { env, connectDatabase } from './config';
+import { logger } from './config/logger';
 import { errorHandler } from './middlewares';
 
 // ── Import Routes ──
@@ -31,9 +34,38 @@ import syncRoutes from './modules/sync/sync.routes';
 const app = express();
 
 // ── Global Middleware ──
-app.use(cors({ origin: env.CORS_ORIGIN }));
+app.use(helmet());
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+
+// Rate limiting — 100 requests per 15 minutes per IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Terlalu banyak request, coba lagi nanti' },
+});
+app.use('/api/', limiter);
+
+// Stricter rate limit for auth endpoints — 20 requests per 15 minutes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Terlalu banyak percobaan login, coba lagi nanti' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/refresh-token', authLimiter);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// ── Request logging ──
+app.use((req, _res, next) => {
+  logger.debug({ method: req.method, url: req.url }, 'incoming request');
+  next();
+});
 
 // ── Health Check ──
 app.get('/api/health', (_req, res) => {
@@ -79,13 +111,12 @@ async function start() {
   await connectDatabase();
 
   app.listen(env.PORT, () => {
-    console.log(`[SERVER] Bodogol Livestock API running on port ${env.PORT}`);
-    console.log(`[SERVER] Environment: ${env.NODE_ENV}`);
+    logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Bodogol Livestock API started');
   });
 }
 
 start().catch((err) => {
-  console.error('[SERVER] Failed to start:', err);
+  logger.error({ err }, 'Failed to start server');
   process.exit(1);
 });
 

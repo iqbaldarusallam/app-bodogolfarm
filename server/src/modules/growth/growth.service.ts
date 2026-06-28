@@ -1,14 +1,14 @@
 import { GrowthRecord } from '../../models/growth-record.model';
-import { AppError } from '../../middlewares';
+import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
 import { CreateGrowthRecordInput, UpdateGrowthRecordInput } from './growth.validator';
 
 export async function getByLivestock(livestockId: string) {
   return GrowthRecord.find({ livestock_id: livestockId }).sort({ record_date: -1 });
 }
 
-export async function getById(id: string) {
-  const record = await GrowthRecord.findById(id);
-  if (!record) throw new AppError('Record pertumbuhan tidak ditemukan', 404);
+export async function getById(id: string, farmId: string) {
+  const record = await GrowthRecord.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(record, farmId, 'Record pertumbuhan');
   return record;
 }
 
@@ -35,17 +35,19 @@ export async function create(input: CreateGrowthRecordInput, userId: string) {
   });
 }
 
-export async function update(id: string, input: UpdateGrowthRecordInput) {
+export async function update(id: string, input: UpdateGrowthRecordInput, farmId: string) {
+  const existing = await GrowthRecord.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(existing, farmId, 'Record pertumbuhan');
   const record = await GrowthRecord.findByIdAndUpdate(id, input, {
     new: true,
     runValidators: true,
   });
-  if (!record) throw new AppError('Record pertumbuhan tidak ditemukan', 404);
   return record;
 }
 
-export async function remove(id: string) {
-  const record = await GrowthRecord.findByIdAndDelete(id);
-  if (!record) throw new AppError('Record pertumbuhan tidak ditemukan', 404);
+export async function remove(id: string, farmId: string) {
+  const record = await GrowthRecord.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(record, farmId, 'Record pertumbuhan');
+  await GrowthRecord.findByIdAndDelete(id);
   return { message: 'Record pertumbuhan berhasil dihapus' };
 }

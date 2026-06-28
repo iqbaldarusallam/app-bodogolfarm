@@ -23,6 +23,13 @@ router.get(
   livestockController.getAll,
 );
 
+// PUT /api/livestock/:id/pen — transfer pen
+router.put(
+  '/:id/pen',
+  validate({ params: livestockIdParamSchema }),
+  livestockController.transferPen,
+);
+
 // GET /api/livestock/:id
 router.get(
   '/:id',

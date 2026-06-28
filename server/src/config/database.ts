@@ -4,57 +4,41 @@
 
 import mongoose from 'mongoose';
 import { env } from './env';
+import { logger } from './logger';
 
 export async function connectDatabase(): Promise<void> {
   try {
-    // Opsi koneksi
     const options: mongoose.ConnectOptions = {
-      // Auto-index pada production
       autoIndex: env.NODE_ENV !== 'production',
     };
 
     await mongoose.connect(env.MONGODB_URI, options);
 
-    console.log('┌──────────────────────────────────────────────┐');
-    console.log('│  MongoDB Connected Successfully              │');
-    console.log('├──────────────────────────────────────────────┤');
-    console.log(`│  URI: ${maskUri(env.MONGODB_URI)}`);
-    console.log(`│  Database: ${mongoose.connection.db?.databaseName || 'unknown'}`);
-    console.log(`│  Host: ${mongoose.connection.host}`);
-    console.log(`│  Port: ${mongoose.connection.port}`);
-    console.log('└──────────────────────────────────────────────┘');
+    logger.info({
+      db: mongoose.connection.db?.databaseName || 'unknown',
+      host: mongoose.connection.host,
+      port: mongoose.connection.port,
+    }, 'MongoDB connected');
   } catch (error) {
-    console.error('┌──────────────────────────────────────────────┐');
-    console.error('│  MongoDB Connection FAILED                   │');
-    console.error('├──────────────────────────────────────────────┤');
-    console.error(`│  Error: ${error}`);
-    console.error('│                                              │');
-    console.error('│  Checklist:                                  │');
-    console.error('│  1. MongoDB Atlas cluster sudah dibuat?      │');
-    console.error('│  2. IP address sudah di-whitelist?            │');
-    console.error('│  3. Username & password benar?                │');
-    console.error('│  4. Connection string di .env sudah benar?    │');
-    console.error('└──────────────────────────────────────────────┘');
+    logger.error({ err: error }, 'MongoDB connection failed');
     process.exit(1);
   }
 
-  // Event listeners
   mongoose.connection.on('error', (err) => {
-    console.error('[DB] MongoDB runtime error:', err.message);
+    logger.error({ err }, 'MongoDB runtime error');
   });
 
   mongoose.connection.on('disconnected', () => {
-    console.warn('[DB] MongoDB disconnected. Attempting reconnect...');
+    logger.warn('MongoDB disconnected');
   });
 
   mongoose.connection.on('reconnected', () => {
-    console.log('[DB] MongoDB reconnected successfully');
+    logger.info('MongoDB reconnected');
   });
 
-  // Graceful shutdown
   process.on('SIGINT', async () => {
     await mongoose.connection.close();
-    console.log('[DB] MongoDB connection closed (app termination)');
+    logger.info('MongoDB connection closed');
     process.exit(0);
   });
 }

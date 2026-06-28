@@ -70,11 +70,10 @@ userSchema.index({ farm_id: 1, role: 1 });
 userSchema.index({ farm_id: 1, is_active: 1 });
 
 // ── Hooks ──
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // ── Methods ──

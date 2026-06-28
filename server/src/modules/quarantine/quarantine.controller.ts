@@ -22,7 +22,7 @@ export async function getActive(req: AuthenticatedRequest, res: Response, next: 
 
 export async function getById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const record = await quarantineService.getById(req.params.id);
+    const record = await quarantineService.getById(req.params.id as string, req.user!.farm_id);
     res.status(200).json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -31,7 +31,7 @@ export async function getById(req: AuthenticatedRequest, res: Response, next: Ne
 
 export async function create(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const record = await quarantineService.create(req.body);
+    const record = await quarantineService.create(req.body, req.user!.userId);
     res.status(201).json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -40,7 +40,7 @@ export async function create(req: AuthenticatedRequest, res: Response, next: Nex
 
 export async function update(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const record = await quarantineService.update(req.params.id, req.body);
+    const record = await quarantineService.update(req.params.id as string, req.body, req.user!.farm_id);
     res.status(200).json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -50,9 +50,10 @@ export async function update(req: AuthenticatedRequest, res: Response, next: Nex
 export async function clearance(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const record = await quarantineService.clearance(
-      req.params.id,
+      req.params.id as string,
       req.body,
       req.user!.userId,
+      req.user!.farm_id,
     );
     res.status(200).json({ success: true, data: record });
   } catch (error) {
@@ -62,7 +63,7 @@ export async function clearance(req: AuthenticatedRequest, res: Response, next: 
 
 export async function remove(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const result = await quarantineService.remove(req.params.id);
+    const result = await quarantineService.remove(req.params.id as string, req.user!.farm_id);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

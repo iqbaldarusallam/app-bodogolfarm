@@ -4,7 +4,7 @@ import * as reproductionService from './reproduction.service';
 
 export async function getByLivestock(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const records = await reproductionService.getByLivestock(req.params.livestockId);
+    const records = await reproductionService.getByLivestock(req.params.livestockId as string);
     res.status(200).json({ success: true, data: records });
   } catch (error) {
     next(error);
@@ -13,7 +13,7 @@ export async function getByLivestock(req: AuthenticatedRequest, res: Response, n
 
 export async function getById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const record = await reproductionService.getById(req.params.id);
+    const record = await reproductionService.getById(req.params.id as string, req.user!.farm_id);
     res.status(200).json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -31,7 +31,7 @@ export async function create(req: AuthenticatedRequest, res: Response, next: Nex
 
 export async function update(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const record = await reproductionService.update(req.params.id, req.body);
+    const record = await reproductionService.update(req.params.id as string, req.body, req.user!.farm_id);
     res.status(200).json({ success: true, data: record });
   } catch (error) {
     next(error);
@@ -40,7 +40,7 @@ export async function update(req: AuthenticatedRequest, res: Response, next: Nex
 
 export async function remove(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const result = await reproductionService.remove(req.params.id);
+    const result = await reproductionService.remove(req.params.id as string, req.user!.farm_id);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

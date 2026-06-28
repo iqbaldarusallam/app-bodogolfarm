@@ -1,5 +1,5 @@
 import { HealthRecord } from '../../models/health-record.model';
-import { AppError } from '../../middlewares';
+import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
 import { CreateHealthRecordInput, UpdateHealthRecordInput } from './health.validator';
 
 export async function getByLivestock(livestockId: string) {
@@ -8,9 +8,11 @@ export async function getByLivestock(livestockId: string) {
     .sort({ record_date: -1 });
 }
 
-export async function getById(id: string) {
-  const record = await HealthRecord.findById(id).populate('examiner', 'name');
-  if (!record) throw new AppError('Catatan kesehatan tidak ditemukan', 404);
+export async function getById(id: string, farmId: string) {
+  const record = await HealthRecord.findById(id)
+    .populate('livestock_id', 'farm_id')
+    .populate('examiner', 'name');
+  assertLivestockBelongsToFarm(record, farmId, 'Catatan kesehatan');
   return record;
 }
 
@@ -21,18 +23,20 @@ export async function create(input: CreateHealthRecordInput, userId: string) {
   });
 }
 
-export async function update(id: string, input: UpdateHealthRecordInput) {
+export async function update(id: string, input: UpdateHealthRecordInput, farmId: string) {
+  const existing = await HealthRecord.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(existing, farmId, 'Catatan kesehatan');
   const record = await HealthRecord.findByIdAndUpdate(id, input, {
     new: true,
     runValidators: true,
   });
-  if (!record) throw new AppError('Catatan kesehatan tidak ditemukan', 404);
   return record;
 }
 
-export async function remove(id: string) {
-  const record = await HealthRecord.findByIdAndDelete(id);
-  if (!record) throw new AppError('Catatan kesehatan tidak ditemukan', 404);
+export async function remove(id: string, farmId: string) {
+  const record = await HealthRecord.findById(id).populate('livestock_id', 'farm_id');
+  assertLivestockBelongsToFarm(record, farmId, 'Catatan kesehatan');
+  await HealthRecord.findByIdAndDelete(id);
   return { message: 'Catatan kesehatan berhasil dihapus' };
 }
 

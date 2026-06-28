@@ -40,4 +40,11 @@ router.post(
   authController.refreshToken,
 );
 
+// POST /api/auth/logout
+router.post(
+  '/logout',
+  authenticate,
+  authController.logout,
+);
+
 export default router;
