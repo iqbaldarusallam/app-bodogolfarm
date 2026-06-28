@@ -47,3 +47,6 @@ example
 
 # Local browser profiles
 .tmp-*/
+
+# IDE
+.vscode/
