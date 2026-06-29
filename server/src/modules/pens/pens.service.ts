@@ -45,16 +45,26 @@ export async function getByType(farmId: string, penType: string) {
 // ── Pen Occupancy Management ──
 
 export async function incrementOccupancy(penId: string): Promise<void> {
-  await Pen.findByIdAndUpdate(penId, { $inc: { current_count: 1 } });
+  const pen = await Pen.findById(penId);
+  if (!pen) throw new AppError('Kandang tidak ditemukan', 404);
+  if (pen.current_count >= pen.capacity) {
+    throw new AppError(`Kandang ${pen.pen_code} sudah penuh (${pen.current_count}/${pen.capacity})`, 400);
+  }
+  pen.current_count += 1;
+  await pen.save();
 }
 
 export async function decrementOccupancy(penId: string): Promise<void> {
-  await Pen.findByIdAndUpdate(penId, { $inc: { current_count: -1 } });
+  const pen = await Pen.findById(penId);
+  if (!pen) return;
+  pen.current_count = Math.max(0, pen.current_count - 1);
+  await pen.save();
 }
 
-export async function assertHasCapacity(penId: string): Promise<void> {
+export async function assertHasCapacity(penId: string, farmId?: string): Promise<void> {
   const pen = await Pen.findById(penId);
   if (!pen) throw new AppError('Kandang tidak ditemukan', 404);
+  if (farmId) assertBelongsToFarm(pen, farmId, 'Kandang');
   if (!pen.is_active) throw new AppError('Kandang tidak aktif', 400);
   if (pen.current_count >= pen.capacity) {
     throw new AppError(`Kandang ${pen.pen_code} sudah penuh (${pen.current_count}/${pen.capacity})`, 400);

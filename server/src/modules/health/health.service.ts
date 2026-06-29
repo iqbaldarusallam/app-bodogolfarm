@@ -1,4 +1,5 @@
 import { HealthRecord } from '../../models/health-record.model';
+import { Livestock } from '../../models/livestock.model';
 import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
 import { CreateHealthRecordInput, UpdateHealthRecordInput } from './health.validator';
 
@@ -42,7 +43,6 @@ export async function remove(id: string, farmId: string) {
 
 export async function getInfectious(farmId: string) {
   // Cari semua livestock_id milik farm
-  const { Livestock } = await import('../../models/livestock.model');
   const livestockIds = await Livestock.find({ farm_id: farmId }).distinct('_id');
 
   return HealthRecord.find({
@@ -55,7 +55,6 @@ export async function getInfectious(farmId: string) {
 }
 
 export async function getFollowUps(farmId: string) {
-  const { Livestock } = await import('../../models/livestock.model');
   const livestockIds = await Livestock.find({ farm_id: farmId }).distinct('_id');
 
   return HealthRecord.find({

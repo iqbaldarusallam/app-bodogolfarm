@@ -3,6 +3,8 @@ import { GrowthRecord } from '../../models/growth-record.model';
 import { FeedingLog } from '../../models/feeding-log.model';
 import { HealthRecord } from '../../models/health-record.model';
 import { MedicationLog } from '../../models/medication-log.model';
+import { VaccinationRecord } from '../../models/vaccination-record.model';
+import { ReproductionRecord } from '../../models/reproduction-record.model';
 import { StatusHistory } from '../../models/status-history.model';
 
 export async function getGrowthReport(farmId: string, startDate?: string, endDate?: string) {
@@ -17,7 +19,7 @@ export async function getGrowthReport(farmId: string, startDate?: string, endDat
   if (Object.keys(dateFilter).length > 0) filter.record_date = dateFilter;
 
   return GrowthRecord.find(filter)
-    .populate('livestock_id', 'ear_tag name species breed')
+    .populate('livestock_id', 'ear_tag name species breed photo_url')
     .sort({ record_date: -1 }).lean();
 }
 
@@ -102,7 +104,6 @@ export async function getWithdrawalAlert(farmId: string) {
 }
 
 export async function getVaccinationDue(farmId: string) {
-  const { VaccinationRecord } = await import('../../models/vaccination-record.model');
   const livestockIds = await Livestock.find({ farm_id: farmId, current_status: { $in: ['active', 'sick', 'quarantine'] } }).distinct('_id');
 
   const in30Days = new Date();
@@ -117,7 +118,6 @@ export async function getVaccinationDue(farmId: string) {
 }
 
 export async function getReproductionReport(farmId: string, startDate?: string, endDate?: string) {
-  const { ReproductionRecord } = await import('../../models/reproduction-record.model');
   const livestockIds = await Livestock.find({ farm_id: farmId }).distinct('_id');
   const dateFilter: Record<string, Date> = {};
   if (startDate) dateFilter.$gte = new Date(startDate);

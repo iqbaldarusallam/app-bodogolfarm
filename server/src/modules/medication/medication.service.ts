@@ -1,4 +1,5 @@
 import { MedicationLog } from '../../models/medication-log.model';
+import { Livestock } from '../../models/livestock.model';
 import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
 import { CreateMedicationLogInput, UpdateMedicationLogInput } from './medication.validator';
 
@@ -51,7 +52,6 @@ export async function remove(id: string, farmId: string) {
 }
 
 export async function getActiveWithdrawals(farmId: string) {
-  const { Livestock } = await import('../../models/livestock.model');
   const livestockIds = await Livestock.find({ farm_id: farmId }).distinct('_id');
 
   return MedicationLog.find({

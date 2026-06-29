@@ -96,7 +96,6 @@ export async function remove(id: string, farmId: string) {
 }
 
 export async function getPregnancies(farmId: string) {
-  const { Livestock } = await import('../../models/livestock.model');
   const livestockIds = await Livestock.find({ farm_id: farmId, sex: 'female' }).distinct('_id');
 
   return ReproductionRecord.find({

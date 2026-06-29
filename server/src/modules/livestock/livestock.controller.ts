@@ -71,6 +71,8 @@ export async function transferPen(req: AuthenticatedRequest, res: Response, next
       req.params.id as string,
       req.body.pen_id as string,
       req.user!.farm_id,
+      req.user!.userId,
+      req.body.reason as string,
     );
     res.status(200).json({ success: true, data: result });
   } catch (error) {

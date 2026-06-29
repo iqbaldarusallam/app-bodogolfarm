@@ -1,13 +1,33 @@
 import { Livestock } from '../../models/livestock.model';
+import { GrowthRecord } from '../../models/growth-record.model';
+import { FeedingLog } from '../../models/feeding-log.model';
+import { HealthRecord } from '../../models/health-record.model';
+import { MedicationLog } from '../../models/medication-log.model';
+import { VaccinationRecord } from '../../models/vaccination-record.model';
+import { QuarantineRecord } from '../../models/quarantine-record.model';
+import { ReproductionRecord } from '../../models/reproduction-record.model';
 import { AppError, assertBelongsToFarm } from '../../middlewares';
-import { StatusHistory } from '../../models/status-history.model';
-import { incrementOccupancy, decrementOccupancy } from '../pens/pens.service';
+import { incrementOccupancy, decrementOccupancy, assertHasCapacity, getById as getPenById } from '../pens/pens.service';
 import {
   CreateLivestockInput,
   UpdateLivestockInput,
   LivestockQueryInput,
 } from './livestock.validator';
 import { LivestockStatus } from '../../types/enums';
+import { StatusHistory } from '../../models/status-history.model';
+
+// Terminal statuses — once entered, no new recording is allowed
+const TERMINAL_STATUSES = new Set([
+  LivestockStatus.SOLD,
+  LivestockStatus.DEAD,
+  LivestockStatus.TRANSFERRED,
+]);
+
+function assertNotTerminal(status: LivestockStatus, action: string) {
+  if (TERMINAL_STATUSES.has(status)) {
+    throw new AppError(`Ternak dengan status ${status} tidak dapat menerima ${action}`, 400);
+  }
+}
 
 export async function getAll(farmId: string, query: LivestockQueryInput) {
   const filter: Record<string, unknown> = { farm_id: farmId };
@@ -60,6 +80,9 @@ export async function create(input: CreateLivestockInput, userId: string, farmId
   });
   if (existing) throw new AppError('Ear tag sudah ada di farm ini', 409);
 
+  // Validate pen exists, belongs to farm, is active, and has capacity
+  await assertHasCapacity(input.current_pen_id as string, farmId);
+
   const livestock = await Livestock.create({ ...input, farm_id: farmId, created_by: userId });
   await incrementOccupancy(input.current_pen_id as string);
   return livestock;
@@ -69,16 +92,16 @@ export async function update(id: string, input: UpdateLivestockInput, farmId: st
   const livestock = await Livestock.findById(id);
   assertBelongsToFarm(livestock, farmId, 'Ternak');
 
-  // Jika status berubah, catat di status_history
-  if (input.current_status && input.current_status !== livestock.current_status) {
-    await StatusHistory.create({
-      livestock_id: id,
-      status_from: livestock.current_status,
-      status_to: input.current_status,
-      changed_date: new Date(),
-      reason: `Status diubah dari ${livestock.current_status} ke ${input.current_status}`,
-      changed_by: livestock.created_by,
-    });
+  // Block updates to terminal status livestock
+  assertNotTerminal(livestock.current_status as LivestockStatus, 'pengubahan data');
+
+  // Defense-in-depth: block direct status/pen changes even if validator misses them
+  const rawInput = input as Record<string, unknown>;
+  if (rawInput.current_status) {
+    throw new AppError('Perubahan status harus melalui modul Status', 400);
+  }
+  if (rawInput.current_pen_id) {
+    throw new AppError('Pindah kandang harus melalui Transfer Kandang', 400);
   }
 
   const updated = await Livestock.findByIdAndUpdate(id, input, {
@@ -92,6 +115,18 @@ export async function update(id: string, input: UpdateLivestockInput, farmId: st
 export async function remove(id: string, farmId: string) {
   const livestock = await Livestock.findById(id);
   assertBelongsToFarm(livestock, farmId, 'Ternak');
+
+  // Block deletion for quarantine status — use quarantine clearance
+  if (livestock.current_status === LivestockStatus.QUARANTINE) {
+    throw new AppError('Ternak karantina harus menggunakan modul Karantina untuk dihapus/dilepas', 400);
+  }
+
+  // Decrement pen occupancy before deletion
+  const currentPenId = livestock.current_pen_id?.toString();
+  if (currentPenId) {
+    await decrementOccupancy(currentPenId);
+  }
+
   await Livestock.findByIdAndDelete(id);
   return { message: 'Ternak berhasil dihapus' };
 }
@@ -99,15 +134,6 @@ export async function remove(id: string, farmId: string) {
 export async function getTimeline(id: string, farmId: string) {
   const livestock = await Livestock.findById(id);
   assertBelongsToFarm(livestock, farmId, 'Ternak');
-
-  // Lazy-import all record models to avoid circular deps
-  const { GrowthRecord } = await import('../../models/growth-record.model');
-  const { FeedingLog } = await import('../../models/feeding-log.model');
-  const { HealthRecord } = await import('../../models/health-record.model');
-  const { MedicationLog } = await import('../../models/medication-log.model');
-  const { VaccinationRecord } = await import('../../models/vaccination-record.model');
-  const { QuarantineRecord } = await import('../../models/quarantine-record.model');
-  const { ReproductionRecord } = await import('../../models/reproduction-record.model');
 
   // Fetch all records in parallel
   const [growth, feeding, health, medication, vaccination, quarantine, reproduction, statusHistory] =
@@ -275,14 +301,27 @@ export async function transferPen(
   livestockId: string,
   newPenId: string,
   farmId: string,
+  userId?: string,
+  reason?: string,
 ) {
   const livestock = await Livestock.findById(livestockId);
   assertBelongsToFarm(livestock, farmId, 'Ternak');
+
+  // Block transfers for terminal status
+  assertNotTerminal(livestock.current_status as LivestockStatus, 'pemindahan kandang');
+
+  // Block transfers for quarantine status — use quarantine clearance instead
+  if (livestock.current_status === LivestockStatus.QUARANTINE) {
+    throw new AppError('Ternak karantina harus menggunakan modul Karantina untuk pindah kandang', 400);
+  }
 
   const oldPenId = livestock.current_pen_id?.toString();
   if (oldPenId === newPenId) {
     throw new AppError('Ternak sudah berada di kandang ini', 400);
   }
+
+  // Validate target pen: exists, belongs to farm, is active, has capacity
+  const targetPen = await getPenById(newPenId, farmId);
 
   // Update pen occupancy
   livestock.current_pen_id = newPenId as any;
@@ -290,6 +329,16 @@ export async function transferPen(
 
   if (oldPenId) await decrementOccupancy(oldPenId);
   await incrementOccupancy(newPenId);
+
+  // Log cage movement in status history
+  await StatusHistory.create({
+    livestock_id: livestockId,
+    status_from: livestock.current_status,
+    status_to: livestock.current_status,
+    changed_date: new Date(),
+    reason: reason ?? `Dipindahkan dari kandang ke kandang baru`,
+    changed_by: userId ?? livestock.created_by,
+  });
 
   return livestock;
 }

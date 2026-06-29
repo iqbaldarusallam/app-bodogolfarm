@@ -1,4 +1,5 @@
 import { VaccinationRecord } from '../../models/vaccination-record.model';
+import { Livestock } from '../../models/livestock.model';
 import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
 import { CreateVaccinationRecordInput, UpdateVaccinationRecordInput } from './vaccination.validator';
 
@@ -49,7 +50,6 @@ export async function remove(id: string, farmId: string) {
 }
 
 export async function getUpcomingBoosters(farmId: string) {
-  const { Livestock } = await import('../../models/livestock.model');
   const livestockIds = await Livestock.find({ farm_id: farmId }).distinct('_id');
 
   const twoWeeksFromNow = new Date();

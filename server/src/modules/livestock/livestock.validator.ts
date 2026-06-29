@@ -44,13 +44,17 @@ export const updateLivestockSchema = z.object({
   origin: z.nativeEnum(LivestockOrigin).optional(),
   purchase_date: z.coerce.date().optional(),
   purchase_price: z.number().min(0).optional(),
-  current_pen_id: z.string().min(1).optional(),
-  current_status: z.nativeEnum(LivestockStatus).optional(),
+  // current_status dan current_pen_id dihapus dari update — gunakan modul Status dan Transfer Kandang
   dam_id: z.string().optional(),
   sire_id: z.string().optional(),
   // nullable: kirim null untuk menghapus foto
   photo_url: z.string().url().nullable().optional(),
   notes: z.string().trim().optional(),
+});
+
+export const transferPenSchema = z.object({
+  pen_id: z.string().min(1, 'Kandang tujuan wajib diisi'),
+  reason: z.string().trim().optional(),
 });
 
 export const livestockIdParamSchema = z.object({

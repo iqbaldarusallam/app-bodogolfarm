@@ -1,13 +1,13 @@
 import { QuarantineRecord } from '../../models/quarantine-record.model';
 import { Livestock } from '../../models/livestock.model';
 import { AppError, assertLivestockBelongsToFarm } from '../../middlewares';
-import { incrementOccupancy, decrementOccupancy } from '../pens/pens.service';
+import { incrementOccupancy, decrementOccupancy, assertHasCapacity, getById as getPenById } from '../pens/pens.service';
 import {
   CreateQuarantineRecordInput,
   UpdateQuarantineRecordInput,
   ClearanceInput,
 } from './quarantine.validator';
-import { QuarantineStatus, LivestockStatus, ClearanceTestResult } from '../../types/enums';
+import { QuarantineStatus, LivestockStatus, ClearanceTestResult, PenType } from '../../types/enums';
 import { transitionTo } from '../status/status.service';
 
 export async function getAll(farmId: string) {
@@ -47,6 +47,13 @@ export async function create(input: CreateQuarantineRecordInput, userId: string)
   const livestock = await Livestock.findById(input.livestock_id);
   if (!livestock) throw new AppError('Ternak tidak ditemukan', 404);
 
+  // Validate quarantine pen: must be quarantine type, active, and has capacity
+  const quarantinePen = await getPenById(input.quarantine_pen_id.toString(), livestock.farm_id.toString());
+  if (quarantinePen.pen_type !== PenType.QUARANTINE) {
+    throw new AppError('Kandang yang dipilih bukan kandang karantina', 400);
+  }
+  await assertHasCapacity(input.quarantine_pen_id.toString(), livestock.farm_id.toString());
+
   // Transition status to quarantine via centralized service (creates status_history)
   await transitionTo(
     input.livestock_id.toString(),
@@ -55,6 +62,7 @@ export async function create(input: CreateQuarantineRecordInput, userId: string)
     {
       reason: `Karantina: ${input.disease_suspected} — ${input.reason}`,
       changed_date: input.start_date,
+      farmId: livestock.farm_id.toString(),
     },
   );
 
@@ -62,6 +70,11 @@ export async function create(input: CreateQuarantineRecordInput, userId: string)
   const currentPenId = livestock.current_pen_id?.toString();
   if (currentPenId) await decrementOccupancy(currentPenId);
   await incrementOccupancy(input.quarantine_pen_id.toString());
+
+  // Update livestock's current pen to quarantine pen
+  await Livestock.findByIdAndUpdate(input.livestock_id, {
+    current_pen_id: input.quarantine_pen_id,
+  });
 
   return QuarantineRecord.create({
     ...input,
@@ -95,12 +108,12 @@ export async function clearance(id: string, input: ClearanceInput, userId: strin
   record.clearance_test_result = input.clearance_test_result;
   record.clearance_date = input.clearance_date;
   record.cleared_by = userId as any;
-  record.end_date = input.clearance_date;
   if (input.notes) record.notes = input.notes;
 
   if (input.clearance_test_result === ClearanceTestResult.NEGATIVE) {
     // Negative → cleared, restore to original pen
     record.status = QuarantineStatus.CLEARED;
+    record.end_date = input.clearance_date;
 
     // Get original pen from quarantine record
     const originalPenId = (record.original_pen_id as any)?._id?.toString()
@@ -114,6 +127,7 @@ export async function clearance(id: string, input: ClearanceInput, userId: strin
       {
         reason: 'Clearance negatif — ternak dinyatakan sehat',
         changed_date: input.clearance_date,
+        farmId: farmId,
       },
     );
 
@@ -128,8 +142,9 @@ export async function clearance(id: string, input: ClearanceInput, userId: strin
       await incrementOccupancy(originalPenId);
     }
   } else {
-    // Positive → failed (quarantine continues, no status change)
-    record.status = QuarantineStatus.FAILED;
+    // Positive → quarantine continues, livestock stays in quarantine
+    // Record stays ACTIVE so it appears in active quarantine list
+    // Health officer can continue treatment or escalate to death/culling
   }
 
   await record.save();

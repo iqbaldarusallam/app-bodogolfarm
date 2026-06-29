@@ -6,6 +6,7 @@ import {
   updateLivestockSchema,
   livestockIdParamSchema,
   livestockQuerySchema,
+  transferPenSchema,
 } from './livestock.validator';
 import { UserRole } from '../../types/enums';
 
@@ -26,7 +27,7 @@ router.get(
 // PUT /api/livestock/:id/pen — transfer pen
 router.put(
   '/:id/pen',
-  validate({ params: livestockIdParamSchema }),
+  validate({ params: livestockIdParamSchema, body: transferPenSchema }),
   livestockController.transferPen,
 );
 

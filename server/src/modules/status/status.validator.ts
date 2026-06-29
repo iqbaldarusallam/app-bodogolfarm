@@ -3,9 +3,9 @@ import { LivestockStatus } from '../../types/enums';
 
 export const createStatusHistorySchema = z.object({
   livestock_id: z.string().min(1, 'Ternak wajib diisi'),
-  status_from: z.nativeEnum(LivestockStatus, { error: () => ({ message: 'Status asal tidak valid' }) }),
+  // status_from dihapus — ditentukan server dari status saat ini
   status_to: z.nativeEnum(LivestockStatus, { error: () => ({ message: 'Status tujuan tidak valid' }) }),
-  changed_date: z.coerce.date(),
+  changed_date: z.coerce.date().optional(),
   reason: z.string().min(1, 'Alasan perubahan status wajib diisi').trim(),
   sale_price: z.number().min(0).optional(),
   sale_buyer: z.string().trim().optional(),

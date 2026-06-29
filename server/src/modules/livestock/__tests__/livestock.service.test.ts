@@ -7,6 +7,8 @@ const mockCountDocuments = jest.fn();
 const mockCreateStatusHistory = jest.fn();
 const mockIncrementOccupancy = jest.fn();
 const mockDecrementOccupancy = jest.fn();
+const mockAssertHasCapacity = jest.fn();
+const mockGetPenById = jest.fn();
 
 jest.mock('../../../models/livestock.model', () => ({
   Livestock: {
@@ -25,6 +27,8 @@ jest.mock('../../../models/status-history.model', () => ({
 jest.mock('../../pens/pens.service', () => ({
   incrementOccupancy: mockIncrementOccupancy,
   decrementOccupancy: mockDecrementOccupancy,
+  assertHasCapacity: mockAssertHasCapacity,
+  getById: mockGetPenById,
 }));
 
 import { getAll, getById, update, remove } from '../livestock.service';
@@ -41,7 +45,8 @@ function listQuery(result: any[]) {
   const query: any = {
     sort: jest.fn(() => query),
     skip: jest.fn(() => query),
-    limit: jest.fn(() => Promise.resolve(result)),
+    limit: jest.fn(() => query),
+    lean: jest.fn(() => Promise.resolve(result)),
   };
   return query;
 }
@@ -105,5 +110,78 @@ describe('Livestock Service — farm scoping', () => {
 
     await expect(remove('l1', 'farm1')).rejects.toThrow('Ternak tidak ditemukan di farm ini');
     expect(mockFindByIdAndDelete).not.toHaveBeenCalled();
+  });
+});
+
+describe('Livestock Service — terminal status guards', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  const terminalStatuses = ['sold', 'dead', 'transferred'];
+
+  for (const status of terminalStatuses) {
+    it(`blocks update on ${status} livestock`, async () => {
+      mockFindById.mockResolvedValue({
+        _id: 'l1',
+        farm_id: { toString: () => 'farm1' },
+        current_status: status,
+      });
+
+      await expect(update('l1', { name: 'Test' } as any, 'farm1'))
+        .rejects.toThrow(`Ternak dengan status ${status} tidak dapat menerima pengubahan data`);
+      expect(mockFindByIdAndUpdate).not.toHaveBeenCalled();
+    });
+  }
+
+  it('blocks direct status change through update', async () => {
+    mockFindById.mockResolvedValue({
+      _id: 'l1',
+      farm_id: { toString: () => 'farm1' },
+      current_status: 'active',
+    });
+
+    await expect(update('l1', { current_status: 'sick' } as any, 'farm1'))
+      .rejects.toThrow('Perubahan status harus melalui modul Status');
+  });
+
+  it('blocks direct pen change through update', async () => {
+    mockFindById.mockResolvedValue({
+      _id: 'l1',
+      farm_id: { toString: () => 'farm1' },
+      current_status: 'active',
+    });
+
+    await expect(update('l1', { current_pen_id: 'pen2' } as any, 'farm1'))
+      .rejects.toThrow('Pindah kandang harus melalui Transfer Kandang');
+  });
+});
+
+describe('Livestock Service — remove with quarantine guard', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('blocks deletion of quarantine livestock', async () => {
+    mockFindById.mockResolvedValue({
+      _id: 'l1',
+      farm_id: { toString: () => 'farm1' },
+      current_status: 'quarantine',
+      current_pen_id: { toString: () => 'pen1' },
+    });
+
+    await expect(remove('l1', 'farm1'))
+      .rejects.toThrow('Ternak karantina harus menggunakan modul Karantina untuk dihapus/dilepas');
+    expect(mockFindByIdAndDelete).not.toHaveBeenCalled();
+  });
+
+  it('decrements occupancy when deleting active livestock', async () => {
+    mockFindById.mockResolvedValue({
+      _id: 'l1',
+      farm_id: { toString: () => 'farm1' },
+      current_status: 'active',
+      current_pen_id: { toString: () => 'pen1' },
+    });
+    mockFindByIdAndDelete.mockResolvedValue({});
+
+    await remove('l1', 'farm1');
+    expect(mockDecrementOccupancy).toHaveBeenCalledWith('pen1');
+    expect(mockFindByIdAndDelete).toHaveBeenCalledWith('l1');
   });
 });
