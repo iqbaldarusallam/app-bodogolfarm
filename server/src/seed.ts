@@ -4,11 +4,11 @@
 // ─────────────────────────────────────────────────────────
 
 import dotenv from 'dotenv';
-dotenv.config();
-
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { env } from './config';
+
+dotenv.config();
 
 // ── Helpers ──
 
@@ -128,7 +128,6 @@ async function seed() {
   // Set dam_id for nursery animals
   const a002Id = livestockIds[1]; // Ratu
   const d002Id = livestockIds[7]; // Merino
-  const a007Id = livestockIds[14]; // Anak1
   const d004Id = livestockIds[15]; // AnakDomba
   await db.collection('livestocks').updateOne({ ear_tag: 'A-007' }, { $set: { dam_id: a002Id } });
   await db.collection('livestocks').updateOne({ ear_tag: 'D-004' }, { $set: { dam_id: d002Id } });
@@ -493,6 +492,267 @@ async function seed() {
   console.log('✅ Status History: 3 created');
 
   // ──────────────────────────────────────
+  // Disease Catalog — Common Goat Diseases
+  // ──────────────────────────────────────
+  const diseaseCatalogDocs = await db.collection('diseasecatalogs').insertMany([
+    {
+      farm_id: farmId,
+      code: 'GAS',
+      name: 'Gastroenteritis (Diare)',
+      category: 'Digestive',
+      common_symptoms: ['Diare', 'Lemas', 'Dehidrasi', 'Nafsu makan turun'],
+      severity_default: 'moderate',
+      is_contagious: true,
+      quarantine_recommended: true,
+      description: 'Radang saluran pencernaan yang sering menyebabkan diare pada kambing',
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      code: 'PAR',
+      name: 'Parsitisme Internal (Cacingan)',
+      category: 'Parasitic',
+      common_symptoms: ['Kurus', 'Bulu kusam', 'Anemia', 'Nafsu makan turun', 'Diare'],
+      severity_default: 'moderate',
+      is_contagious: false,
+      quarantine_recommended: false,
+      description: 'Infeksi cacing internal yang umum pada kambing',
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      code: 'PNE',
+      name: 'Pneumonia',
+      category: 'Respiratory',
+      common_symptoms: ['Batuk', 'Pilek', 'Demam', 'Napas berat', 'Lemas'],
+      severity_default: 'severe',
+      is_contagious: true,
+      quarantine_recommended: true,
+      description: 'Radang paru-paru yang bisa disebabkan bakteri atau virus',
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      code: 'SCA',
+      name: 'Scabies',
+      category: 'Skin',
+      common_symptoms: ['Gatal', 'Kerak kulit', 'Bulu rontok', 'Luka'],
+      severity_default: 'moderate',
+      is_contagious: true,
+      quarantine_recommended: true,
+      description: 'Infeksi kulit akibat tungau Sarcoptes',
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      code: 'ORT',
+      name: 'Orf (Sore Mouth)',
+      category: 'Viral',
+      common_symptoms: ['Luka mulut', 'Keropeng', 'Nafsu makan turun', 'Demam'],
+      severity_default: 'mild',
+      is_contagious: true,
+      quarantine_recommended: true,
+      description: 'Penyakit virus yang menyebabkan luka di mulut dan kaki',
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      code: 'FRO',
+      name: 'Foot Rot',
+      category: 'Injury',
+      common_symptoms: ['Pincang', 'Kuku berbau', 'Kuku lunak', 'Bengkak kaki'],
+      severity_default: 'moderate',
+      is_contagious: true,
+      quarantine_recommended: false,
+      description: 'Infeksi bakteri pada kuku yang menyebabkan pincang',
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      code: 'PIN',
+      name: 'Pink Eye (Conjunctivitis)',
+      category: 'Eye',
+      common_symptoms: ['Mata merah', 'Mata berair', 'Mata keruh', 'Berair'],
+      severity_default: 'mild',
+      is_contagious: true,
+      quarantine_recommended: false,
+      description: 'Radang selaput lendir mata yang menular',
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      code: 'MAS',
+      name: 'Mastitis',
+      category: 'Reproductive',
+      common_symptoms: ['Ambing bengkak', 'Nyeri', 'Susu abnormal', 'Demam'],
+      severity_default: 'moderate',
+      is_contagious: false,
+      quarantine_recommended: false,
+      description: 'Radang ambing yang umum pada indukan',
+      is_active: true,
+      created_by: iqbalId,
+    },
+  ]);
+  console.log(`✅ Disease Catalog: ${Object.keys(diseaseCatalogDocs.insertedIds).length} created`);
+
+  // Get inserted disease IDs
+  const diseaseIds = Object.values(diseaseCatalogDocs.insertedIds);
+
+  // ──────────────────────────────────────
+  // Treatment Protocols
+  // ──────────────────────────────────────
+  const treatmentProtocolDocs = await db.collection('treatmentprotocols').insertMany([
+    {
+      farm_id: farmId,
+      disease_catalog_id: diseaseIds[0], // Gastroenteritis
+      protocol_name: 'Protocol Diare Kambing',
+      severity_level: 'moderate',
+      initial_action: 'Isolasi ternak sakit, berikan oralit dan rehidrasi',
+      recommended_medicines: ['Oralit ternak', 'Antibiotik broad spectrum'],
+      recommended_dosage_notes: 'Sesuaikan dengan berat badan ternak',
+      recommended_duration_days: 5,
+      quarantine_required: true,
+      cage_sanitation_action: 'Bersihkan kandang dan ganti bedding',
+      vet_escalation_criteria: 'Jika diare berdarah atau ternak tidak mau makan 2 hari',
+      follow_up_after_days: 3,
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      disease_catalog_id: diseaseIds[1], // Parsitisme Internal
+      protocol_name: 'Protocol Cacingan Kambing',
+      severity_level: 'moderate',
+      initial_action: 'Berikan antiparasit dan evaluasi pakan',
+      recommended_medicines: ['Albendazole', 'Ivermectin'],
+      recommended_dosage_notes: 'Dosis sesuai berat badan, ulang 2 minggu kemudian',
+      recommended_duration_days: 14,
+      quarantine_required: false,
+      cage_sanitation_action: 'Bersihkan kandang dan cuci tempat pakan',
+      vet_escalation_criteria: 'Jika anemia berat atau tidak ada perbaikan',
+      follow_up_after_days: 14,
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      disease_catalog_id: diseaseIds[2], // Pneumonia
+      protocol_name: 'Protocol Pneumonia Kambing',
+      severity_level: 'severe',
+      initial_action: 'Isolasi segera, berikan antibiotik dan anti-inflamasi',
+      recommended_medicines: ['Oxytacycline', 'Flunixin meglumine'],
+      recommended_dosage_notes: 'Injeksi sesuai dosis berat badan',
+      recommended_duration_days: 7,
+      quarantine_required: true,
+      cage_sanitation_action: 'Pastikan ventilasi kandang baik, hindari kelembaban',
+      vet_escalation_criteria: 'Segera hubungi dokter hewan jika suhu >41°C atau napas sangat berat',
+      follow_up_after_days: 2,
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      disease_catalog_id: diseaseIds[3], // Scabies
+      protocol_name: 'Protocol Scabies Kambing',
+      severity_level: 'moderate',
+      initial_action: 'Isolasi ternak, berikan antiparasit topikal dan injeksi',
+      recommended_medicines: ['Ivermectin injeksi', 'Malathion spray'],
+      recommended_dosage_notes: 'Ivermectin injeksi, ulang 2 minggu. Malathion spray ke seluruh tubuh.',
+      recommended_duration_days: 14,
+      quarantine_required: true,
+      cage_sanitation_action: 'Bersihkan dan semprot desinfeksi kandang',
+      vet_escalation_criteria: 'Jika kulit terinfeksi sekunder atau tidak membaik',
+      follow_up_after_days: 14,
+      is_active: true,
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      disease_catalog_id: diseaseIds[4], // Orf
+      protocol_name: 'Protocol Orf Kambing',
+      severity_level: 'mild',
+      initial_action: 'Isolasi, bersihkan luka, berikan vitamin',
+      recommended_medicines: ['Antiseptik luka', 'Vitamin B kompleks'],
+      recommended_dosage_notes: 'Bersihkan luka 2x sehari, berikan vitamin oral',
+      recommended_duration_days: 14,
+      quarantine_required: true,
+      cage_sanitation_action: 'Hindari kontak dengan ternak lain, cuci tangan',
+      vet_escalation_criteria: 'Jika luka meluas atau ternak tidak mau makan',
+      follow_up_after_days: 7,
+      is_active: true,
+      created_by: iqbalId,
+    },
+  ]);
+  console.log(`✅ Treatment Protocols: ${Object.keys(treatmentProtocolDocs.insertedIds).length} created`);
+
+  // ──────────────────────────────────────
+  // Vaccination Protocols
+  // ──────────────────────────────────────
+  const vaccinationProtocolDocs = await db.collection('vaccinationprotocols').insertMany([
+    {
+      farm_id: farmId,
+      name: 'Protokol PPR (Peste des Petits Ruminants)',
+      target_disease: 'PPR',
+      interval_days: 365,
+      minimum_age_days: 90,
+      requires_booster: false,
+      applicable_gender: 'all',
+      is_active: true,
+      priority: 1,
+      notes: 'Vaksinasi PPR setiap tahun untuk semua ternak di atas 3 bulan',
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      name: 'Protokol Anthrax',
+      target_disease: 'Anthrax',
+      interval_days: 365,
+      minimum_age_days: 60,
+      requires_booster: false,
+      applicable_gender: 'all',
+      is_active: true,
+      priority: 1,
+      notes: 'Vaksinasi Anthrax tahunan, terutama di daerah endemis',
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      name: 'Protokol Enterotoksemia',
+      target_disease: 'Enterotoksemia',
+      interval_days: 180,
+      minimum_age_days: 30,
+      requires_booster: true,
+      booster_interval_days: 180,
+      applicable_gender: 'all',
+      is_active: true,
+      priority: 2,
+      notes: 'Vaksinasi Enterotoksemia setiap 6 bulan',
+      created_by: iqbalId,
+    },
+    {
+      farm_id: farmId,
+      name: 'Protokol Orf Vaccine',
+      target_disease: 'Orf',
+      interval_days: 365,
+      minimum_age_days: 30,
+      requires_booster: false,
+      applicable_gender: 'all',
+      is_active: true,
+      priority: 3,
+      notes: 'Vaksinasi Orf sesuai kebutuhan regional',
+      created_by: iqbalId,
+    },
+  ]);
+  console.log(`✅ Vaccination Protocols: ${Object.keys(vaccinationProtocolDocs.insertedIds).length} created`);
+
+  // ──────────────────────────────────────
   // Summary
   // ──────────────────────────────────────
   console.log('\n════════════════════════════════════════════');
@@ -511,6 +771,9 @@ async function seed() {
   console.log('  Quarantine:         1');
   console.log('  Reproduction:       5');
   console.log('  Status History:     3');
+  console.log('  Disease Catalog:    8');
+  console.log('  Treatment Protocol: 5');
+  console.log('  Vaccination Protocol: 4');
   console.log('════════════════════════════════════════════');
   console.log('  Login: eden@bodogol.farm / password123');
   console.log('  Login: iqbal@bodogol.farm / password123');
