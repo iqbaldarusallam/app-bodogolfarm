@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, TextInput, View, Text, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -35,11 +35,15 @@ export default function GrowthFormScreen() {
   const {
     livestockId,
     earTag = '',
+    animalName = '',
+    photoUrl = '',
     lastWeight = '0',
     status = 'active',
   } = useLocalSearchParams<{
     livestockId: string;
     earTag: string;
+    animalName: string;
+    photoUrl: string;
     lastWeight: string;
     status: string;
   }>();
@@ -159,19 +163,33 @@ export default function GrowthFormScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Identity Card ── */}
-        <View className="mb-6 flex-row items-center justify-between rounded-xl border-l-4 border-primary bg-surface p-md shadow-sm">
-          <View>
-            <View className="self-start rounded bg-primary-fixed px-2 py-0.5">
-              <Text className="font-mono text-id-monospace text-primary">#{earTag}</Text>
+        <View className="mb-6 flex-row items-center gap-4 rounded-xl border-l-4 border-primary bg-surface p-md shadow-sm">
+          {photoUrl ? (
+            <Image
+              source={{ uri: photoUrl }}
+              className="h-16 w-16 rounded-xl"
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="h-16 w-16 items-center justify-center rounded-xl bg-surface-container">
+              <MaterialCommunityIcons name="paw" size={28} color="#0F5238" />
             </View>
-            <Text className="mt-xs text-body-md text-on-surface-variant">
+          )}
+          <View className="flex-1">
+            <Text className="font-headline text-headline-sm font-bold text-on-surface">{animalName || earTag}</Text>
+            <View className="mt-1 flex-row items-center gap-2">
+              <View className="self-start rounded bg-primary-fixed px-2 py-0.5">
+                <Text className="font-mono text-id-monospace text-primary">#{earTag}</Text>
+              </View>
+              <View className="flex-row items-center gap-1.5 rounded-full bg-status-active/10 px-2 py-0.5">
+                <View className="h-1.5 w-1.5 rounded-full bg-status-active" />
+                <Text className="text-[10px] font-medium text-status-active">{statusLabel}</Text>
+              </View>
+            </View>
+            <Text className="mt-1 text-caption text-on-surface-variant">
               Terakhir:{' '}
               <Text className="font-bold text-on-surface">{lastWeightNum.toFixed(1)} kg</Text>
             </Text>
-          </View>
-          <View className="flex-row items-center gap-1.5 rounded-full bg-status-active/10 px-3 py-1">
-            <View className="h-2 w-2 rounded-full bg-status-active" />
-            <Text className="text-label-md font-medium text-status-active">{statusLabel}</Text>
           </View>
         </View>
 

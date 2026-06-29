@@ -7,10 +7,10 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, TextInput, View, Te
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
-import { submitClearance } from '@/services/quarantine';
+import { submitClearance, getActiveQuarantines } from '@/services/quarantine';
 import { usePens } from '@/hooks/useLivestock';
 import type { ClearanceTestResult } from '@/types/quarantine';
 
@@ -56,6 +56,20 @@ export default function ClearanceScreen() {
   }>();
 
   const { data: pens = [] } = usePens();
+  const { data: activeQuarantines = [] } = useQuery({
+    queryKey: ['quarantine', 'active'],
+    queryFn: getActiveQuarantines,
+  });
+
+  // Find the actual quarantine record for this livestock
+  const actualQuarantineId = useMemo(() => {
+    if (quarantineId && quarantineId !== 'current') return quarantineId;
+    // Find active quarantine by ear tag match
+    const match = activeQuarantines.find(
+      (q) => (q.livestock_id as any)?.ear_tag === earTag,
+    );
+    return match?._id ?? quarantineId;
+  }, [quarantineId, earTag, activeQuarantines]);
 
   const availablePens = useMemo(
     () => pens.filter((p) => p.is_active && p.current_count < p.capacity),
@@ -90,10 +104,9 @@ export default function ClearanceScreen() {
   // ── Mutation ──
   const mutation = useMutation({
     mutationFn: () =>
-      submitClearance(quarantineId!, {
+      submitClearance(actualQuarantineId!, {
         clearance_test_result: testDone ? testResult : 'negative',
         clearance_date: toISODate(clearanceDate),
-        ...(testDone && isNegative && returnPenId ? { return_pen_id: returnPenId } : {}),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
       }),
     onSuccess: () => {

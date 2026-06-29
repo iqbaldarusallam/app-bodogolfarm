@@ -117,14 +117,13 @@ export default function UpdateStatusScreen() {
 
     mutation.mutate({
       livestock_id: livestockId!,
-      status_from: currentStatus as LivestockStatus,
       status_to: statusTo,
       changed_date: toISODate(eventDate),
       reason: reason.trim(),
       ...(isSold && salePrice ? { sale_price: parseFloat(salePrice) } : {}),
       ...(isSold && saleBuyer.trim() ? { sale_buyer: saleBuyer.trim() } : {}),
     });
-  }, [statusTo, livestockId, currentStatus, eventDate, reason, isSold, salePrice, saleBuyer, mutation]);
+  }, [statusTo, livestockId, eventDate, reason, isSold, salePrice, saleBuyer, mutation]);
 
   const onDateChange = useCallback((_: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatepicker(Platform.OS === 'ios');

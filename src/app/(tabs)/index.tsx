@@ -11,6 +11,7 @@ import type { ComponentProps } from 'react';
 
 import { useAuthStore } from '@/store/auth';
 import { useDashboardSummary } from '@/hooks/useDashboard';
+import { useNotificationCount } from '@/hooks/useNotifications';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -204,6 +205,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, isError, refetch, isRefetching } = useDashboardSummary();
+  const { data: notificationData } = useNotificationCount();
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -260,18 +262,17 @@ export default function DashboardScreen() {
           </View>
 
           <View className="flex-row items-center gap-2">
-            {/* Notification bell — scrolls to alerts section */}
+            {/* Notification bell — navigates to notifications screen */}
             <Pressable
-              onPress={() => {
-                // Navigate to reports withdrawal alert as the most critical notification
-                router.push('/(tabs)/reports');
-              }}
+              onPress={() => router.push('/(modals)/notifications')}
               className="relative h-11 w-11 items-center justify-center rounded-full bg-surface-container active:bg-surface-container-high"
             >
               <MaterialCommunityIcons name="bell-outline" size={22} color="#404943" />
-              {alertCount > 0 && (
+              {(notificationData?.unread_count ?? 0) > 0 && (
                 <View className="absolute right-1.5 top-1.5 min-w-[18px] items-center rounded-full bg-status-quarantine px-1">
-                  <Text className="font-caption text-[10px] font-bold text-white">{alertCount > 9 ? '9+' : alertCount}</Text>
+                  <Text className="font-caption text-[10px] font-bold text-white">
+                    {(notificationData?.unread_count ?? 0) > 9 ? '9+' : notificationData?.unread_count ?? 0}
+                  </Text>
                 </View>
               )}
             </Pressable>
@@ -336,6 +337,22 @@ export default function DashboardScreen() {
                 value={avgADG !== null ? formatADG(avgADG) : (isLoading ? '...' : '-')}
                 icon="trending-up"
                 tone="primary"
+              />
+            </View>
+            <View className="flex-row gap-gutter">
+              <StatCard
+                label="Terjual"
+                value={data?.livestock.sold ?? (isLoading ? '...' : 0)}
+                suffix="ekor"
+                icon="currency-usd"
+                tone="sick"
+              />
+              <StatCard
+                label="Mati"
+                value={data?.livestock.dead ?? (isLoading ? '...' : 0)}
+                suffix="ekor"
+                icon="heart-broken"
+                tone="quarantine"
               />
             </View>
           </View>

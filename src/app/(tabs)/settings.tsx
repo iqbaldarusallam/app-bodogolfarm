@@ -106,11 +106,7 @@ export default function SettingsScreen() {
   };
 
   const handleSync = () => {
-    Alert.alert(
-      'Sinkronisasi',
-      'Aplikasi ini beroperasi secara online.\n\nSemua data langsung tersimpan ke server saat terhubung.',
-      [{ text: 'OK' }],
-    );
+    Alert.alert('Sinkronisasi', 'Aplikasi beroperasi secara online.\n\nSemua data langsung tersimpan ke server saat terhubung.', [{ text: 'OK' }]);
   };
 
   const handleLogout = () => {
@@ -185,15 +181,14 @@ export default function SettingsScreen() {
           >
             <View className="flex-row items-center gap-md">
               <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-container">
-                <MaterialCommunityIcons name="sync" size={23} color="#A8E7C5" />
+                <MaterialCommunityIcons name="cloud-check" size={23} color="#A8E7C5" />
               </View>
               <View className="flex-1">
                 <Text className="font-headline text-headline-sm font-semibold text-primary">Sinkronisasi</Text>
-                <Text className="mt-0.5 font-caption text-caption text-on-surface-variant">Status: Tersinkron</Text>
-                <Text className="font-caption text-caption text-on-surface-variant">Terakhir: 2 menit lalu</Text>
+                <Text className="mt-0.5 font-caption text-caption text-on-surface-variant">Status: Online</Text>
               </View>
               <View className="rounded-lg bg-primary px-4 py-2.5 shadow-md">
-                <Text className="font-label text-label-md font-semibold text-on-primary">Sync</Text>
+                <Text className="font-label text-label-md font-semibold text-on-primary">OK</Text>
               </View>
             </View>
           </Pressable>

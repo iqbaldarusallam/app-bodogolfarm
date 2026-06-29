@@ -49,6 +49,19 @@ export async function deleteLivestock(id: string): Promise<void> {
   await api.delete(`/livestock/${id}`);
 }
 
+// ── Transfer Pen ──
+
+export async function transferPen(
+  id: string,
+  input: { pen_id: string; reason?: string },
+): Promise<Livestock> {
+  const { data } = await api.put<{ success: boolean; data: Livestock }>(
+    `/livestock/${id}/pen`,
+    input,
+  );
+  return data.data;
+}
+
 // ── Timeline ──
 
 export interface TimelineItem {

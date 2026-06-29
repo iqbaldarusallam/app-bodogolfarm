@@ -11,7 +11,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { createHealthRecord } from '@/services/health';
+import { useDiseases } from '@/hooks/useDiseaseCatalog';
+import { useProtocolsByDisease } from '@/hooks/useTreatmentProtocol';
 import type { CreateHealthRecordInput, DiseaseCategory } from '@/types/health';
+import type { DiseaseCatalogItem } from '@/services/diseaseCatalog';
 
 // ── Constants ──
 
@@ -66,6 +69,15 @@ export default function HealthFormScreen() {
   const [actionTaken, setActionTaken] = useState('');
   const [referralNeeded, setReferralNeeded] = useState(false);
   const [isInfectious, setIsInfectious] = useState(false);
+
+  // Disease catalog
+  const { data: diseases = [] } = useDiseases();
+  const [selectedDisease, setSelectedDisease] = useState<DiseaseCatalogItem | null>(null);
+  const [showDiseaseDropdown, setShowDiseaseDropdown] = useState(false);
+  const [diseaseSearch, setDiseaseSearch] = useState('');
+
+  // Treatment protocol for selected disease
+  const { data: protocols = [] } = useProtocolsByDisease(selectedDisease?._id ?? null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -346,9 +358,133 @@ export default function HealthFormScreen() {
 
           {/* ── Diagnosa & Kategori ── */}
           <View className="rounded-xl border border-outline-variant bg-surface p-md shadow-sm gap-md">
-            {/* Diagnosa */}
+            {/* Disease Catalog Picker */}
             <View className="gap-sm">
-              <Text className="text-label-md font-medium text-on-surface-variant">Diagnosa (Suspect)</Text>
+              <Text className="text-label-md font-medium text-on-surface-variant">Pilih Penyakit (Opsional)</Text>
+              <Pressable
+                onPress={() => setShowDiseaseDropdown(!showDiseaseDropdown)}
+                className="flex-row h-12 items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest px-3"
+              >
+                <Text className={`flex-1 text-body-md ${selectedDisease ? 'text-on-surface' : 'text-outline'}`}>
+                  {selectedDisease ? `${selectedDisease.code} — ${selectedDisease.name}` : 'Pilih dari katalog...'}
+                </Text>
+                <MaterialCommunityIcons
+                  name={showDiseaseDropdown ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color="#707973"
+                />
+              </Pressable>
+
+              {showDiseaseDropdown && (
+                <View className="rounded-lg border border-outline-variant bg-surface-container-lowest shadow-md">
+                  {/* Search */}
+                  <View className="flex-row items-center gap-2 border-b border-outline-variant px-3 py-2">
+                    <MaterialCommunityIcons name="magnify" size={16} color="#707973" />
+                    <TextInput
+                      value={diseaseSearch}
+                      onChangeText={setDiseaseSearch}
+                      placeholder="Cari penyakit..."
+                      placeholderTextColor="#BFC9C1"
+                      className="flex-1 text-body-md text-on-surface"
+                    />
+                  </View>
+                  {/* Disease list */}
+                  <ScrollView className="max-h-48" showsVerticalScrollIndicator={false}>
+                    {diseases
+                      .filter((d) =>
+                        d.name.toLowerCase().includes(diseaseSearch.toLowerCase()) ||
+                        d.code.toLowerCase().includes(diseaseSearch.toLowerCase())
+                      )
+                      .map((disease) => (
+                        <Pressable
+                          key={disease._id}
+                          onPress={() => {
+                            setSelectedDisease(disease);
+                            setDiagnosis(disease.name);
+                            setDiseaseCategory(disease.category as DiseaseCategory);
+                            setIsInfectious(disease.is_contagious);
+                            setShowDiseaseDropdown(false);
+                            setDiseaseSearch('');
+                          }}
+                          className="flex-row items-center gap-3 border-b border-outline-variant px-3 py-3 last:border-b-0"
+                        >
+                          <View className="flex-1">
+                            <Text className="text-body-md font-medium text-on-surface">{disease.name}</Text>
+                            <Text className="text-caption text-on-surface-variant">{disease.code} · {disease.category}</Text>
+                          </View>
+                          {disease.is_contagious && (
+                            <View className="rounded-full bg-status-quarantine/10 px-2 py-0.5">
+                              <Text className="text-[10px] font-bold text-status-quarantine">MENULAR</Text>
+                            </View>
+                          )}
+                        </Pressable>
+                      ))}
+                    {diseases.filter((d) =>
+                      d.name.toLowerCase().includes(diseaseSearch.toLowerCase()) ||
+                      d.code.toLowerCase().includes(diseaseSearch.toLowerCase())
+                    ).length === 0 && (
+                      <View className="py-4 items-center">
+                        <Text className="text-body-sm text-on-surface-variant">Tidak ada penyakit ditemukan</Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                </View>
+              )}
+
+              {/* Selected disease info */}
+              {selectedDisease && (
+                <View className="rounded-lg bg-primary/5 p-3">
+                  <View className="flex-row items-center gap-2">
+                    <MaterialCommunityIcons name="information" size={16} color="#0F5238" />
+                    <Text className="text-caption font-medium text-primary">{selectedDisease.name}</Text>
+                  </View>
+                  {selectedDisease.common_symptoms.length > 0 && (
+                    <Text className="mt-1 text-caption text-on-surface-variant">
+                      Gejala: {selectedDisease.common_symptoms.join(', ')}
+                    </Text>
+                  )}
+                  {selectedDisease.quarantine_recommended && (
+                    <View className="mt-2 flex-row items-center gap-1">
+                      <MaterialCommunityIcons name="shield-alert" size={12} color="#E63946" />
+                      <Text className="text-[10px] font-bold text-status-quarantine">REKOMENDASI KARANTINA</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Treatment Protocol Recommendation */}
+              {selectedDisease && protocols.length > 0 && (
+                <View className="rounded-lg border border-info/30 bg-info-light p-3">
+                  <View className="flex-row items-center gap-2 mb-2">
+                    <MaterialCommunityIcons name="clipboard-text-clock" size={16} color="#1565C0" />
+                    <Text className="text-caption font-bold text-info">PROTOKOL PENANGANAN</Text>
+                  </View>
+                  {protocols.map((protocol) => (
+                    <View key={protocol._id} className="mb-2 last:mb-0">
+                      <Text className="text-body-sm font-semibold text-on-surface">{protocol.protocol_name}</Text>
+                      <Text className="text-caption text-on-surface-variant">Severity: {protocol.severity_level}</Text>
+                      <Text className="text-caption text-on-surface-variant">Tindakan: {protocol.initial_action}</Text>
+                      {protocol.recommended_medicines.length > 0 && (
+                        <Text className="text-caption text-on-surface-variant">Obat: {protocol.recommended_medicines.join(', ')}</Text>
+                      )}
+                      {protocol.quarantine_required && (
+                        <View className="mt-1 flex-row items-center gap-1">
+                          <MaterialCommunityIcons name="shield-alert" size={10} color="#E63946" />
+                          <Text className="text-[10px] font-bold text-status-quarantine">WAJIB KARANTINA</Text>
+                        </View>
+                      )}
+                      {protocol.vet_escalation_criteria && (
+                        <Text className="mt-1 text-[10px] text-on-surface-variant">Eskalasi: {protocol.vet_escalation_criteria}</Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* Diagnosa (manual) */}
+            <View className="gap-sm">
+              <Text className="text-label-md font-medium text-on-surface-variant">Diagnosa (Manual)</Text>
               <View className="relative">
                 <MaterialCommunityIcons
                   name="magnify"

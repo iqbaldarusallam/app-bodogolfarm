@@ -41,10 +41,30 @@ const REPORT_CATEGORIES: {
   { title: 'Pertumbuhan & ADG', subtitle: 'Grafik bobot dan performa harian', icon: 'chart-line', bg: 'bg-brand-light', color: '#0F5238', type: 'growth' },
   { title: 'Rekap Kesehatan', subtitle: 'Pemeriksaan, sakit, dan tindakan', icon: 'medical-bag', bg: 'bg-[#E3F2FD]', color: '#1565C0', type: 'health' },
   { title: 'Biaya Pakan & FCR', subtitle: 'Efisiensi biaya dan konversi pakan', icon: 'cash-multiple', bg: 'bg-[#FFF8E1]', color: '#F57C00', type: 'feeding' },
+  { title: 'Biaya Pengobatan', subtitle: 'Rekap obat dan biaya treatment', icon: 'pill', bg: 'bg-[#F3E5F5]', color: '#7B1FA2', type: 'medication' },
   { title: 'Reproduksi', subtitle: 'Kawin, bunting, dan kelahiran', icon: 'baby-carriage', bg: 'bg-purple-50', color: '#9333EA', type: 'reproduction' },
   { title: 'Status Vaksinasi', subtitle: 'Jadwal booster dan histori vaksin', icon: 'needle', bg: 'bg-teal-50', color: '#0D9488', type: 'vaccination-due' },
   { title: 'Withdrawal Alert', subtitle: 'Hewan dalam masa henti obat — TIDAK BOLEH DIJUAL', icon: 'alert-circle', bg: 'bg-[#FDECEA]', color: '#D32F2F', type: 'withdrawal-alert', isAlert: true },
+  { title: 'Riwayat Status', subtitle: 'Perubahan status ternak', icon: 'flag-outline', bg: 'bg-[#E8F5E9]', color: '#2E7D32', type: 'status' },
   { title: 'Inventaris Kandang', subtitle: 'Populasi dan distribusi kandang', icon: 'warehouse', bg: 'bg-surface-muted', color: '#404943', type: 'pens' },
+];
+
+const ANALYTICS_CATEGORIES: {
+  title: string;
+  subtitle: string;
+  icon: IconName;
+  bg: string;
+  color: string;
+  screen: string;
+}[] = [
+  { title: 'Death Loss Analysis', subtitle: 'Analisis kerugian ternak mati', icon: 'heart-broken', bg: 'bg-[#FDECEA]', color: '#D32F2F', screen: '/(modals)/death-loss' },
+  { title: 'Profitabilitas Per Ekor', subtitle: 'Analisis untung/rugi ternak', icon: 'trending-up', bg: 'bg-[#E8F5E9]', color: '#2E7D32', screen: '/(modals)/profitability' },
+  { title: 'FCR & ADG', subtitle: 'Efisiensi pakan dan pertumbuhan', icon: 'scale-bathroom', bg: 'bg-[#FFF3E0]', color: '#F57C00', screen: '/(modals)/fcr' },
+  { title: 'Efektivitas Treatment', subtitle: 'Analisis efektivitas pengobatan', icon: 'medical-bag', bg: 'bg-[#E3F2FD]', color: '#1565C0', screen: '/(modals)/treatment-effectiveness' },
+  { title: 'KPI Reproduksi', subtitle: 'Conception rate dan kidding rate', icon: 'baby-face-outline', bg: 'bg-purple-50', color: '#9333EA', screen: '/(modals)/reproductive-kpi' },
+  { title: 'Biaya Overhead', subtitle: 'Biaya tenaga kerja dan utilitas', icon: 'cash-multiple', bg: 'bg-surface-muted', color: '#404943', screen: '/(modals)/overhead-cost' },
+  { title: 'Early Warning', subtitle: 'Alert dan peringatan dini', icon: 'shield-alert', bg: 'bg-[#FFF3E0]', color: '#F57C00', screen: '/(modals)/early-warning' },
+  { title: 'SOP Harian', subtitle: 'Checklist aktivitas peternak', icon: 'clipboard-check', bg: 'bg-brand-light', color: '#0F5238', screen: '/(modals)/farm-checklist' },
 ];
 
 function ReportRow({
@@ -147,6 +167,29 @@ export default function ReportsScreen() {
               item={category}
               onPress={() => handleReportPress(category)}
             />
+          ))}
+        </View>
+
+        {/* Analytics & Decision Support */}
+        <Text className="mb-3 mt-6 font-label text-label-md font-semibold uppercase tracking-widest text-on-surface-variant">
+          Analitik & Keputusan
+        </Text>
+        <View className="gap-2">
+          {ANALYTICS_CATEGORIES.map((category) => (
+            <Pressable
+              key={category.title}
+              onPress={() => router.push(category.screen as any)}
+              className="flex-row items-center gap-md rounded-xl border border-outline-variant bg-surface-container-lowest p-md shadow-sm active:opacity-70"
+            >
+              <View className={`h-12 w-12 items-center justify-center rounded-xl ${category.bg}`}>
+                <MaterialCommunityIcons name={category.icon as any} size={22} color={category.color} />
+              </View>
+              <View className="flex-1">
+                <Text className="font-headline text-headline-sm font-semibold text-on-surface">{category.title}</Text>
+                <Text className="mt-0.5 font-caption text-caption text-on-surface-variant">{category.subtitle}</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={22} color="#707973" />
+            </Pressable>
           ))}
         </View>
       </ScrollView>

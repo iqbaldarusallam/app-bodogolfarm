@@ -66,6 +66,7 @@ const SPEED_DIAL_ITEMS = [
   { key: 'health', label: 'Catat Kesehatan', icon: 'medical-bag' as const, color: '#E63946' },
   { key: 'vaccination', label: 'Catat Vaksinasi', icon: 'needle' as const, color: '#3B82F6' },
   { key: 'reproduction', label: 'Catat Reproduksi', icon: 'baby-face-outline' as const, color: '#9B5DE5' },
+  { key: 'transfer', label: 'Transfer Kandang', icon: 'home-move' as const, color: '#0F5238' },
   { key: 'status', label: 'Update Status', icon: 'flag-outline' as const, color: '#6D6875' },
 ];
 
@@ -184,6 +185,11 @@ export default function LivestockDetailScreen() {
     ? growthRecords[0].weight_kg
     : 0;
 
+  // Terminal status — view only, no new recording
+  const isTerminalStatus = livestock
+    ? ['sold', 'dead', 'transferred'].includes(livestock.current_status)
+    : false;
+
   const [activeTab, setActiveTab] = useState('timeline');
   const [fabOpen, setFabOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -257,7 +263,7 @@ export default function LivestockDetailScreen() {
       const routes: Record<string, { pathname: string; params: Record<string, string> }> = {
         growth: {
           pathname: '/(modals)/growth',
-          params: { livestockId: livestock._id, earTag: livestock.ear_tag, lastWeight: String(lastWeight), status: livestock.current_status },
+          params: { livestockId: livestock._id, earTag: livestock.ear_tag, animalName: livestock.name ?? livestock.species, photoUrl: livestock.photo_url ?? '', lastWeight: String(lastWeight), status: livestock.current_status },
         },
         feeding: {
           pathname: '/(modals)/feeding',
@@ -274,6 +280,17 @@ export default function LivestockDetailScreen() {
         reproduction: {
           pathname: '/(modals)/reproduction',
           params: { livestockId: livestock._id, earTag: livestock.ear_tag },
+        },
+        transfer: {
+          pathname: '/(modals)/transfer-pen',
+          params: {
+            livestockId: livestock._id,
+            earTag: livestock.ear_tag,
+            animalName: livestock.name ?? livestock.species,
+            currentPenCode: typeof livestock.current_pen_id === 'object' && livestock.current_pen_id !== null
+              ? (livestock.current_pen_id as any).pen_code ?? (livestock.current_pen_id as any)._id
+              : livestock.current_pen_id ?? '',
+          },
         },
         status: {
           pathname: '/(modals)/update-status',
@@ -371,12 +388,15 @@ export default function LivestockDetailScreen() {
               <Text numberOfLines={1} className="font-body text-body-sm text-white/80">{livestock.name ?? livestock.species}</Text>
             </View>
             <StatusBadge status={livestock.current_status} />
-            <Pressable
-              onPress={() => setMenuOpen(true)}
-              className="h-9 w-9 items-center justify-center rounded-full bg-white/20"
-            >
-              <MaterialCommunityIcons name="dots-vertical" size={20} color="#FFFFFF" />
-            </Pressable>
+            {/* Menu button hidden for terminal status — view only */}
+            {!isTerminalStatus && (
+              <Pressable
+                onPress={() => setMenuOpen(true)}
+                className="h-9 w-9 items-center justify-center rounded-full bg-white/20"
+              >
+                <MaterialCommunityIcons name="dots-vertical" size={20} color="#FFFFFF" />
+              </Pressable>
+            )}
           </View>
         </SafeAreaView>
       </Animated.View>
@@ -710,14 +730,16 @@ export default function LivestockDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* ── SpeedDial FAB ── */}
-      <FAB
-        isOpen={fabOpen}
-        onToggle={() => setFabOpen((v) => !v)}
-        items={SPEED_DIAL_ITEMS}
-        onItemPress={handleFabItemPress}
-        bottomOffset={88}
-      />
+      {/* ── SpeedDial FAB — hidden for terminal status ── */}
+      {!isTerminalStatus && (
+        <FAB
+          isOpen={fabOpen}
+          onToggle={() => setFabOpen((v) => !v)}
+          items={SPEED_DIAL_ITEMS}
+          onItemPress={handleFabItemPress}
+          bottomOffset={88}
+        />
+      )}
 
       {/* ── Menu BottomSheet (Edit/Delete) ── */}
       <BottomSheet

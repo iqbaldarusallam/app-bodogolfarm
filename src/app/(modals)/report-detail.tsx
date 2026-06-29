@@ -2,7 +2,8 @@
 // Report Detail Modal — universal screen for all report types
 // ─────────────────────────────────────────────────────────
 
-import { ActivityIndicator, Pressable, ScrollView, View, Text } from 'react-native';
+import { useCallback } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,10 +13,21 @@ import {
   useHealthReport,
   useFeedingReport,
   useMedicationReport,
+  useStatusReport,
   useWithdrawalAlert,
   useVaccinationDue,
   useReproductionReport,
 } from '@/hooks/useReports';
+import {
+  generateGrowthCSV,
+  generateHealthCSV,
+  generateFeedingCSV,
+  generateMedicationCSV,
+  generateStatusCSV,
+  generateReproductionCSV,
+  shareCSV,
+  copyToClipboard,
+} from '@/services/export';
 
 function formatDate(iso: string): string {
   if (!iso) return '-';
@@ -29,14 +41,24 @@ function GrowthReportView({ data }: { data: any[] }) {
     <View className="gap-2">
       {data.map((rec: any) => (
         <View key={rec._id} className="flex-row items-center gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
-          <View className="h-10 w-10 items-center justify-center rounded-full bg-brand-light">
-            <MaterialCommunityIcons name="scale-bathroom" size={20} color="#0F5238" />
-          </View>
+          {rec.livestock_id?.photo_url ? (
+            <Image
+              source={{ uri: rec.livestock_id.photo_url }}
+              className="h-10 w-10 rounded-lg"
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-brand-light">
+              <MaterialCommunityIcons name="paw" size={18} color="#0F5238" />
+            </View>
+          )}
           <View className="flex-1">
             <Text className="font-headline text-headline-sm font-semibold text-on-surface">
-              {rec.livestock_id?.ear_tag ?? '-'} — {rec.weight_kg} kg
+              {rec.livestock_id?.name ?? rec.livestock_id?.ear_tag ?? '-'}
             </Text>
-            <Text className="text-caption text-on-surface-variant">{formatDate(rec.record_date)} · BCS: {rec.bcs}/5</Text>
+            <Text className="text-caption text-on-surface-variant">
+              #{rec.livestock_id?.ear_tag} · {rec.weight_kg} kg · BCS: {rec.bcs}/5
+            </Text>
             {rec.adg_calculated != null && (
               <Text className={`text-caption font-semibold ${rec.adg_calculated >= 0 ? 'text-status-active' : 'text-status-quarantine'}`}>
                 ADG: {rec.adg_calculated >= 0 ? '+' : ''}{Math.round(rec.adg_calculated)}g/hari
@@ -238,6 +260,69 @@ function ReproductionReportView({ data }: { data: any[] }) {
   );
 }
 
+// ── Status Report ──
+function StatusReportView({ data }: { data: any[] }) {
+  if (!data?.length) return <EmptyState icon="flag-outline" label="Tidak ada riwayat perubahan status" />;
+
+  const getStatusColor = (status: string): string => {
+    const map: Record<string, string> = {
+      active: '#52B788',
+      sick: '#F4A261',
+      quarantine: '#E63946',
+      sold: '#6D6875',
+      dead: '#495057',
+      transferred: '#3B82F6',
+    };
+    return map[status] ?? '#707973';
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const map: Record<string, string> = {
+      active: 'Aktif',
+      sick: 'Sakit',
+      quarantine: 'Karantina',
+      sold: 'Terjual',
+      dead: 'Mati',
+      transferred: 'Dipindah',
+    };
+    return map[status] ?? status;
+  };
+
+  return (
+    <View className="gap-2">
+      {data.map((rec: any) => (
+        <View key={rec._id} className="rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
+          <View className="flex-row items-center gap-2">
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-surface-muted">
+              <MaterialCommunityIcons name="flag-outline" size={20} color="#404943" />
+            </View>
+            <View className="flex-1">
+              <Text className="font-headline text-headline-sm font-semibold text-on-surface">
+                {rec.livestock_id?.ear_tag} — {rec.livestock_id?.name ?? ''}
+              </Text>
+              <View className="mt-1 flex-row items-center gap-2">
+                <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${getStatusColor(rec.status_from)}15` }}>
+                  <Text className="text-[10px] font-bold" style={{ color: getStatusColor(rec.status_from) }}>
+                    {getStatusLabel(rec.status_from)}
+                  </Text>
+                </View>
+                <MaterialCommunityIcons name="arrow-right" size={12} color="#707973" />
+                <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${getStatusColor(rec.status_to)}15` }}>
+                  <Text className="text-[10px] font-bold" style={{ color: getStatusColor(rec.status_to) }}>
+                    {getStatusLabel(rec.status_to)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+          {rec.reason && <Text className="mt-2 text-caption text-on-surface-variant">{rec.reason}</Text>}
+          <Text className="mt-1 text-caption text-outline">{formatDate(rec.changed_date)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ── Empty State ──
 function EmptyState({ icon, label }: { icon: string; label: string }) {
   return (
@@ -255,6 +340,7 @@ const REPORT_CONFIG: Record<string, { title: string; icon: string; color: string
   health: { title: 'Rekap Kesehatan', icon: 'medical-bag', color: '#1565C0' },
   feeding: { title: 'Biaya Pakan & FCR', icon: 'cash-multiple', color: '#F57C00' },
   medication: { title: 'Riwayat Pengobatan', icon: 'pill', color: '#F4A261' },
+  status: { title: 'Riwayat Status', icon: 'flag-outline', color: '#2E7D32' },
   'withdrawal-alert': { title: 'Withdrawal Alert', icon: 'alert-circle', color: '#D32F2F' },
   'vaccination-due': { title: 'Vaksinasi Jatuh Tempo', icon: 'needle', color: '#0D9488' },
   reproduction: { title: 'Reproduksi', icon: 'baby-carriage', color: '#9333EA' },
@@ -271,6 +357,7 @@ export default function ReportDetailScreen() {
   const healthQuery = useHealthReport(startDate, endDate);
   const feedingQuery = useFeedingReport(startDate, endDate);
   const medicationQuery = useMedicationReport(startDate, endDate);
+  const statusQuery = useStatusReport(startDate, endDate);
   const withdrawalQuery = useWithdrawalAlert();
   const vaccinationQuery = useVaccinationDue();
   const reproductionQuery = useReproductionReport(startDate, endDate);
@@ -280,12 +367,62 @@ export default function ReportDetailScreen() {
     health: healthQuery,
     feeding: feedingQuery,
     medication: medicationQuery,
+    status: statusQuery,
     'withdrawal-alert': withdrawalQuery,
     'vaccination-due': vaccinationQuery,
     reproduction: reproductionQuery,
   };
 
   const { data, isLoading } = queryMap[type ?? ''] ?? { data: null, isLoading: false };
+
+  // ── Export handlers ──
+  const generateCSV = useCallback((): string => {
+    const reportData = data ?? [];
+    switch (type) {
+      case 'growth': return generateGrowthCSV(reportData);
+      case 'health': return generateHealthCSV(reportData);
+      case 'feeding': return generateFeedingCSV(reportData);
+      case 'medication': return generateMedicationCSV(reportData);
+      case 'status': return generateStatusCSV(reportData);
+      case 'reproduction': return generateReproductionCSV(reportData);
+      default: return '';
+    }
+  }, [type, data]);
+
+  const handleExport = useCallback(async () => {
+    if (!data?.length) {
+      Alert.alert('Export', 'Tidak ada data untuk di-export');
+      return;
+    }
+
+    const csv = generateCSV();
+    if (!csv) {
+      Alert.alert('Export', 'Format report ini belum didukung untuk export');
+      return;
+    }
+
+    Alert.alert(
+      'Export Laporan',
+      'Pilih cara export:',
+      [
+        {
+          text: 'Bagikan',
+          onPress: async () => {
+            const success = await shareCSV(`${config.title}.csv`, csv);
+            if (!success) Alert.alert('Export', 'Gagal membagikan file');
+          },
+        },
+        {
+          text: 'Salin ke Clipboard',
+          onPress: async () => {
+            const success = await copyToClipboard(csv);
+            Alert.alert('Export', success ? 'Berhasil disalin ke clipboard' : 'Gagal menyalin');
+          },
+        },
+        { text: 'Batal', style: 'cancel' },
+      ],
+    );
+  }, [data, generateCSV, config.title]);
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
@@ -297,9 +434,17 @@ export default function ReportDetailScreen() {
         >
           <MaterialCommunityIcons name="arrow-left" size={24} color="#1B1B1D" />
         </Pressable>
-        <Text className="flex-1 pr-12 text-center font-headline text-headline-md font-semibold text-on-surface">
+        <Text className="flex-1 pr-4 text-center font-headline text-headline-md font-semibold text-on-surface">
           {config.title}
         </Text>
+        {data?.length > 0 && (
+          <Pressable
+            onPress={handleExport}
+            className="h-10 w-10 items-center justify-center rounded-full bg-primary/10"
+          >
+            <MaterialCommunityIcons name="share-variant" size={20} color="#0F5238" />
+          </Pressable>
+        )}
       </View>
 
       {isLoading ? (
@@ -317,6 +462,7 @@ export default function ReportDetailScreen() {
           {type === 'health' && <HealthReportView data={data ?? []} />}
           {type === 'feeding' && <FeedingReportView data={data ?? []} />}
           {type === 'medication' && <MedicationReportView data={data ?? []} />}
+          {type === 'status' && <StatusReportView data={data ?? []} />}
           {type === 'withdrawal-alert' && <WithdrawalAlertView data={data ?? []} />}
           {type === 'vaccination-due' && <VaccinationDueView data={data ?? []} />}
           {type === 'reproduction' && <ReproductionReportView data={data ?? []} />}

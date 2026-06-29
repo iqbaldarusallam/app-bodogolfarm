@@ -79,7 +79,6 @@ export default function EditLivestockScreen() {
   );
   const [showBirthPicker, setShowBirthPicker] = useState(false);
   const origin = params.origin ?? '';
-  const selectedPenId = params.penId ?? '';
   const [nationalId, setNationalId] = useState(params.nationalId ?? '');
   const [rfidTag, setRfidTag] = useState(params.rfidTag ?? '');
   const [notes, setNotes] = useState(params.notes ?? '');
@@ -131,14 +130,14 @@ export default function EditLivestockScreen() {
     else input.name = null;
     if (nationalId.trim()) input.national_id = nationalId.trim();
     if (rfidTag.trim()) input.rfid_tag = rfidTag.trim();
-    if (selectedPenId) input.current_pen_id = selectedPenId;
+    // current_pen_id tidak diupdate langsung — gunakan Transfer Kandang
     if (notes.trim()) input.notes = notes.trim();
     // foto: kirim url baru, atau null untuk menghapus (jika sebelumnya ada)
     if (photoUrl) input.photo_url = photoUrl;
     else if (params.photoUrl) input.photo_url = null;
 
     mutation.mutate(input);
-  }, [validate, earTag, name, species, breed, sex, birthDate, origin, selectedPenId, nationalId, rfidTag, notes, photoUrl, params.photoUrl, mutation]);
+  }, [validate, earTag, name, species, breed, sex, birthDate, origin, nationalId, rfidTag, notes, photoUrl, params.photoUrl, mutation]);
 
   const breeds = BREED_OPTIONS[species] || [];
 

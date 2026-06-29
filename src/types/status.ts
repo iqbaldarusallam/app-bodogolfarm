@@ -6,9 +6,9 @@ import type { LivestockStatus } from './livestock';
 
 export interface CreateStatusInput {
   livestock_id: string;
-  status_from: LivestockStatus;
+  // status_from dihapus — ditentukan server dari status saat ini
   status_to: LivestockStatus;
-  changed_date: string;
+  changed_date?: string;
   reason: string;
   sale_price?: number;
   sale_buyer?: string;
