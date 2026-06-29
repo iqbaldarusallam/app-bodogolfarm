@@ -10,8 +10,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/store/auth';
 import { FontProvider } from '@/components/FontProvider';
-import { OfflineBanner } from '@/components/ui/OfflineBanner';
-import { useOnlineStatus } from '@/offline/useOnlineStatus';
 
 import '../global.css';
 
@@ -30,7 +28,6 @@ export default function RootLayout() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
-  const isOnline = useOnlineStatus();
 
   // Don't redirect until store has rehydrated from AsyncStorage
   useEffect(() => {
@@ -58,7 +55,6 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <FontProvider>
       <StatusBar style="dark" />
-      {!isOnline && <OfflineBanner />}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
@@ -149,6 +145,83 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="(modals)/feed-master"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/transfer-pen"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/notifications"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/death-loss"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/profitability"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/fcr"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/farm-checklist"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/vaccination-protocol"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/overhead-cost"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/early-warning"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/treatment-effectiveness"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/reproductive-kpi"
           options={{
             presentation: 'modal',
             animation: 'slide_from_bottom',
