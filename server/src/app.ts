@@ -6,7 +6,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import rateLimitMiddleware from 'express-rate-limit';
 import { env, connectDatabase } from './config';
 import { logger } from './config/logger';
 import { errorHandler } from './middlewares';
@@ -29,6 +29,17 @@ import statusRoutes from './modules/status/status.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import reportsRoutes from './modules/reports/reports.routes';
 import syncRoutes from './modules/sync/sync.routes';
+import diseaseCatalogRoutes from './modules/disease-catalog/disease-catalog.routes';
+import treatmentProtocolRoutes from './modules/treatment-protocol/treatment-protocol.routes';
+import deathLossRoutes from './modules/death-loss/death-loss.routes';
+import profitabilityRoutes from './modules/profitability/profitability.routes';
+import fcrRoutes from './modules/fcr/fcr.routes';
+import farmChecklistRoutes from './modules/farm-checklist/farm-checklist.routes';
+import vaccinationProtocolRoutes from './modules/vaccination-protocol/vaccination-protocol.routes';
+import overheadCostRoutes from './modules/overhead-cost/overhead-cost.routes';
+import earlyWarningRoutes from './modules/early-warning/early-warning.routes';
+import treatmentEffectivenessRoutes from './modules/treatment-effectiveness/treatment-effectiveness.routes';
+import reproductiveKpiRoutes from './modules/reproductive-kpi/reproductive-kpi.routes';
 
 // ── Create Express App ──
 const app = express();
@@ -38,7 +49,7 @@ app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 
 // Rate limiting — 100 requests per 15 minutes per IP
-const limiter = rateLimit({
+const limiter = rateLimitMiddleware({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
@@ -48,7 +59,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Stricter rate limit for auth endpoints — 20 requests per 15 minutes
-const authLimiter = rateLimit({
+const authLimiter = rateLimitMiddleware({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
@@ -94,6 +105,17 @@ app.use('/api/status', statusRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/disease-catalog', diseaseCatalogRoutes);
+app.use('/api/treatment-protocol', treatmentProtocolRoutes);
+app.use('/api/death-loss', deathLossRoutes);
+app.use('/api/profitability', profitabilityRoutes);
+app.use('/api/fcr', fcrRoutes);
+app.use('/api/farm-checklist', farmChecklistRoutes);
+app.use('/api/vaccination-protocol', vaccinationProtocolRoutes);
+app.use('/api/overhead-cost', overheadCostRoutes);
+app.use('/api/early-warning', earlyWarningRoutes);
+app.use('/api/treatment-effectiveness', treatmentEffectivenessRoutes);
+app.use('/api/reproductive-kpi', reproductiveKpiRoutes);
 
 // ── 404 Handler ──
 app.use((_req, res) => {
