@@ -137,9 +137,13 @@ async function start() {
   });
 }
 
-start().catch((err) => {
-  logger.error({ err }, 'Failed to start server');
-  process.exit(1);
-});
+// Lokal (dev): nyalain server long-running. Di Vercel (serverless), app
+// di-export & dipanggil per-request oleh api/index.ts, jadi start() di-skip.
+if (!process.env.VERCEL) {
+  start().catch((err) => {
+    logger.error({ err }, 'Failed to start server');
+    process.exit(1);
+  });
+}
 
 export default app;

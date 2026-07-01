@@ -1,54 +1,58 @@
 // ─────────────────────────────────────────────────────────
-// MongoDB connection configuration
+// MongoDB connection configuration (aman untuk serverless)
 // ─────────────────────────────────────────────────────────
 
 import mongoose from 'mongoose';
 import { env } from './env';
 import { logger } from './logger';
 
-export async function connectDatabase(): Promise<void> {
-  try {
-    const options: mongoose.ConnectOptions = {
-      autoIndex: env.NODE_ENV !== 'production',
-    };
+// Cache koneksi antar-invocation (penting di serverless: jangan reconnect tiap request).
+let connPromise: Promise<typeof mongoose> | null = null;
+let listenersAttached = false;
 
-    await mongoose.connect(env.MONGODB_URI, options);
+function attachListeners(): void {
+  if (listenersAttached) return;
+  listenersAttached = true;
+  mongoose.connection.on('error', (err) => logger.error({ err }, 'MongoDB runtime error'));
+  mongoose.connection.on('disconnected', () => logger.warn('MongoDB disconnected'));
+  mongoose.connection.on('reconnected', () => logger.info('MongoDB reconnected'));
 
-    logger.info({
-      db: mongoose.connection.db?.databaseName || 'unknown',
-      host: mongoose.connection.host,
-      port: mongoose.connection.port,
-    }, 'MongoDB connected');
-  } catch (error) {
-    logger.error({ err: error }, 'MongoDB connection failed');
-    process.exit(1);
+  // SIGINT hanya relevan untuk proses long-running (lokal), bukan serverless.
+  if (!process.env.VERCEL) {
+    process.once('SIGINT', async () => {
+      await mongoose.connection.close();
+      logger.info('MongoDB connection closed');
+      process.exit(0);
+    });
   }
-
-  mongoose.connection.on('error', (err) => {
-    logger.error({ err }, 'MongoDB runtime error');
-  });
-
-  mongoose.connection.on('disconnected', () => {
-    logger.warn('MongoDB disconnected');
-  });
-
-  mongoose.connection.on('reconnected', () => {
-    logger.info('MongoDB reconnected');
-  });
-
-  process.on('SIGINT', async () => {
-    await mongoose.connection.close();
-    logger.info('MongoDB connection closed');
-    process.exit(0);
-  });
 }
 
-// ── Helper: mask password di URI untuk logging ──
-function maskUri(uri: string): string {
+export async function connectDatabase(): Promise<void> {
+  // Sudah terhubung → pakai ulang.
+  if (mongoose.connection.readyState === 1) return;
+
+  if (!connPromise) {
+    attachListeners();
+    connPromise = mongoose.connect(env.MONGODB_URI, {
+      autoIndex: env.NODE_ENV !== 'production',
+      serverSelectionTimeoutMS: 10000,
+    });
+  }
+
   try {
-    // mongodb+srv://user:password@host/db → mongodb+srv://user:****@host/db
-    return uri.replace(/:([^@]+)@/, ':****@');
-  } catch {
-    return '****';
+    await connPromise;
+    logger.info(
+      {
+        db: mongoose.connection.db?.databaseName || 'unknown',
+        host: mongoose.connection.host,
+      },
+      'MongoDB connected',
+    );
+  } catch (error) {
+    connPromise = null; // reset agar invocation berikutnya bisa retry
+    logger.error({ err: error }, 'MongoDB connection failed');
+    // Lokal: matikan proses. Serverless: lempar biar handler balikin 500.
+    if (!process.env.VERCEL) process.exit(1);
+    throw error;
   }
 }
