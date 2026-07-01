@@ -19,7 +19,11 @@ function getBaseUrl(): string {
     return `http://${host}:3000/api`;
   }
 
-  // Fallback production / build
+  // Build standalone (APK) — tidak ada dev server → pakai URL produksi dari app.json.
+  const prodUrl = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl;
+  if (prodUrl && prodUrl.startsWith('http')) return prodUrl;
+
+  // Fallback terakhir (dev tanpa host terdeteksi)
   return 'http://localhost:3000/api';
 }
 

@@ -66,7 +66,7 @@ const SPEED_DIAL_ITEMS = [
   { key: 'health', label: 'Catat Kesehatan', icon: 'medical-bag' as const, color: '#E63946' },
   { key: 'vaccination', label: 'Catat Vaksinasi', icon: 'needle' as const, color: '#3B82F6' },
   { key: 'reproduction', label: 'Catat Reproduksi', icon: 'baby-face-outline' as const, color: '#9B5DE5' },
-  { key: 'transfer', label: 'Transfer Kandang', icon: 'home-move' as const, color: '#0F5238' },
+  { key: 'transfer', label: 'Transfer Kandang', icon: 'swap-horizontal' as const, color: '#0F5238' },
   { key: 'status', label: 'Update Status', icon: 'flag-outline' as const, color: '#6D6875' },
 ];
 

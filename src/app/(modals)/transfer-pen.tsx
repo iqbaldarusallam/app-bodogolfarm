@@ -111,7 +111,7 @@ export default function TransferPenScreen() {
             </Pressable>
             <Text className="font-headline text-headline-lg font-bold text-primary">Transfer Kandang</Text>
           </View>
-          <MaterialCommunityIcons name="home-move" size={22} color="#0F5238" />
+          <MaterialCommunityIcons name="swap-horizontal" size={22} color="#0F5238" />
         </View>
 
         <ScrollView
