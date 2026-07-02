@@ -48,7 +48,7 @@
       ]
     ],
     "extra": {
-      "apiUrl": "",
+      "apiUrl": "https://bodogol-api.vercel.app/api",
       "cloudinary": {
         "cloudName": "dbjhijeks",
         "uploadPreset": "Bodogol"
